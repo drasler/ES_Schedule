@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ActualTimeCalc 排程移植規劃書</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <style>
+        :root {
+            --primary: #059669;
+            --primary-dark: #047857;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --info: #3b82f6;
+            --gray-50: #f9fafb;
+            --gray-100: #f3f4f6;
+            --gray-200: #e5e7eb;
+            --gray-600: #4b5563;
+            --gray-700: #374151;
+            --gray-800: #1f2937;
+            --gray-900: #111827;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'Microsoft JhengHei', sans-serif;
+            background: linear-gradient(135deg, #059669 0%, #047857 100%);
+            min-height: 100vh;
+            padding: 2rem;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.97);
+            border-radius: 20px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            padding: 3rem;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 3rem;
+            padding-bottom: 2rem;
+            border-bottom: 3px solid var(--primary);
+        }
+
+        header h1 {
+            font-size: 2.2rem;
+            background: linear-gradient(135deg, #059669 0%, #047857 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .meta-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            background: var(--gray-50);
+            border-radius: 12px;
+        }
+
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .meta-item .label {
+            font-weight: 600;
+            color: var(--gray-700);
+        }
+
+        .meta-item .value {
+            color: var(--primary);
+        }
+
+        section {
+            margin-bottom: 2.5rem;
+        }
+
+        section h2 {
+            font-size: 1.5rem;
+            color: var(--gray-800);
+            margin-bottom: 1rem;
+            padding-left: 1rem;
+            border-left: 4px solid var(--primary);
+        }
+
+        section h3 {
+            font-size: 1.2rem;
+            color: var(--gray-700);
+            margin: 1.5rem 0 1rem;
+        }
+
+        .card {
+            background: white;
+            border: 1px solid var(--gray-200);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .alert {
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            margin: 1rem 0;
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+        }
+
+        .alert-warning {
+            background: #fef3c7;
+            border: 1px solid #f59e0b;
+            color: #92400e;
+        }
+
+        .alert-info {
+            background: #dbeafe;
+            border: 1px solid #3b82f6;
+            color: #1e40af;
+        }
+
+        .alert-success {
+            background: #d1fae5;
+            border: 1px solid #10b981;
+            color: #065f46;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+        }
+
+        th,
+        td {
+            padding: 0.75rem 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--gray-200);
+        }
+
+        th {
+            background: var(--gray-50);
+            font-weight: 600;
+            color: var(--gray-700);
+        }
+
+        code {
+            background: var(--gray-100);
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-family: 'Consolas', monospace;
+            color: var(--primary-dark);
+        }
+
+        pre {
+            background: var(--gray-900);
+            color: #e5e7eb;
+            padding: 1.5rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 1rem 0;
+        }
+
+        pre code {
+            background: none;
+            color: inherit;
+            padding: 0;
+        }
+
+        .mermaid {
+            background: white;
+            padding: 1rem;
+            border-radius: 8px;
+            margin: 1rem 0;
+            text-align: center;
+        }
+
+        .file-tree {
+            background: var(--gray-50);
+            border-radius: 8px;
+            padding: 1.5rem;
+            font-family: 'Consolas', monospace;
+            font-size: 0.9rem;
+        }
+
+        .file-tree .folder {
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        .file-tree .new {
+            color: var(--success);
+        }
+
+        footer {
+            text-align: center;
+            padding-top: 2rem;
+            border-top: 1px solid var(--gray-200);
+            color: var(--gray-600);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1>📊 ActualTimeCalc 排程移植規劃書</h1>
+            <p style="color: #4b5563;">工時計算排程任務 - 從 ACTUAL_TIME_Calc_EE 移植至 ES_Schedule</p>
+        </header>
+
+        <div class="meta-info">
+            <div class="meta-item">
+                <span class="label">📅 規劃日期:</span>
+                <span class="value">2026-01-15</span>
+            </div>
+            <div class="meta-item">
+                <span class="label">📦 來源專案:</span>
+                <span class="value">@ACTUAL_TIME_Calc_EE</span>
+            </div>
+            <div class="meta-item">
+                <span class="label">🎯 目標專案:</span>
+                <span class="value">ES_Schedule</span>
+            </div>
+            <div class="meta-item">
+                <span class="label">📊 狀態:</span>
+                <span class="value">待審核</span>
+            </div>
+        </div>
+
+        <!-- 原始專案分析 -->
+        <section>
+            <h2>🔍 原始專案分析</h2>
+
+            <div class="card">
+                <h3>專案功能描述</h3>
+                <p><strong>ACTUAL_TIME_Calc_EE</strong> 是一個工時計算排程程式，主要功能為：</p>
+                <ol>
+                    <li>從 <strong>MSSQL (AMES_DB)</strong> 讀取工時資料 (<code>JH_WO_TIMESHEET</code>)</li>
+                    <li>計算各製程的實際工時與完成數量</li>
+                    <li>將計算結果寫入 <strong>Oracle (JHDB)</strong> 的 <code>ACTUAL_TIME</code> 和
+                        <code>ACTUAL_TIME_DETAIL</code></li>
+                    <li>產生 SAP 上傳用的 TXT 檔案</li>
+                </ol>
+            </div>
+
+            <div class="card">
+                <h3>原始專案結構</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>檔案</th>
+                            <th>說明</th>
+                            <th>行數</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>Program.cs</code></td>
+                            <td>主程式邏輯</td>
+                            <td>633</td>
+                        </tr>
+                        <tr>
+                            <td><code>SqlHelper.cs</code></td>
+                            <td>MSSQL 連線工具類</td>
+                            <td>228</td>
+                        </tr>
+                        <tr>
+                            <td><code>Models/ActualTime.cs</code></td>
+                            <td>報工主表模型</td>
+                            <td>24</td>
+                        </tr>
+                        <tr>
+                            <td><code>Models/ActualTimeDetail.cs</code></td>
+                            <td>報工明細模型</td>
+                            <td>31</td>
+                        </tr>
+                        <tr>
+                            <td><code>Models/EVER_SUM_AMESDB.cs</code></td>
+                            <td>工時資料模型</td>
+                            <td>82</td>
+                        </tr>
+                        <tr>
+                            <td><code>Models/*.cs</code></td>
+                            <td>其他輔助模型</td>
+                            <td>~50</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="card">
+                <h3>資料庫連線</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>連線名稱</th>
+                            <th>資料庫類型</th>
+                            <th>用途</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>JHDB</code></td>
+                            <td>Oracle</td>
+                            <td>目標資料庫 (寫入 ACTUAL_TIME)</td>
+                        </tr>
+                        <tr>
+                            <td><code>EVERSUN_AMESDB</code></td>
+                            <td>MSSQL</td>
+                            <td>來源資料庫 (讀取 JH_WO_TIMESHEET)</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- 資料流程圖 -->
+        <section>
+            <h2>📊 資料流程圖</h2>
+            <div class="card">
+                <pre class="mermaid">
+flowchart LR
+    subgraph Source["來源 MSSQL (AMES_DB)"]
+        S1[JH_WO_TIMESHEET]
+        S2[JH_STANDARD_WORKTIME]
+    end
+    
+    subgraph Process["ActualTimeCalcJob 處理"]
+        P1[Read_Ever_AMES_DB]
+        P2[計算各製程工時]
+        P3[UploadTOSap]
+    end
+    
+    subgraph Target["目標 Oracle (JHDB)"]
+        T1[ACTUAL_TIME]
+        T2[ACTUAL_TIME_DETAIL]
+    end
+    
+    subgraph Output["輸出檔案"]
+        O1[SFIS_WorkTime_*.txt]
+    end
+    
+    S1 --> P1
+    S2 --> P1
+    P1 --> P2
+    P2 --> T1
+    P2 --> T2
+    P2 --> P3
+    P3 --> O1
+    
+    style S1 fill:#3b82f6,color:#fff
+    style T1 fill:#f59e0b,color:#fff
+    style O1 fill:#10b981,color:#fff
+                </pre>
+            </div>
+        </section>
+
+        <!-- 移植規劃 -->
+        <section>
+            <h2>📝 移植規劃</h2>
+
+            <div class="alert alert-info">
+                <span>💡</span>
+                <div>
+                    <strong>移植策略：</strong>
+                    <p>建立新的 <code>ActualTimeCalcJob</code> 實作 <code>IScheduleJob</code> 介面，將原始 Program.cs 的邏輯分離至 Service
+                        層，並整合現有的 Logger 機制。</p>
+                </div>
+            </div>
+
+            <h3>新增檔案清單</h3>
+            <div class="file-tree">
+                <pre>ES_Schedule/
+├── <span class="folder">Jobs/</span>
+│   └── <span class="new">[NEW] ActualTimeCalcJob.cs</span>       # 新排程任務入口
+│
+├── <span class="folder">Services/</span>
+│   └── <span class="new">[NEW] ActualTimeCalcService.cs</span>  # 業務邏輯服務
+│
+├── <span class="folder">Models/</span>
+│   ├── <span class="new">[NEW] ActualTime.cs</span>             # 報工主表
+│   ├── <span class="new">[NEW] ActualTimeDetail.cs</span>       # 報工明細
+│   └── <span class="new">[NEW] TimesheetRecord.cs</span>        # 工時記錄 (原 EVER_SUM_AMESDB)
+│
+├── <span class="folder">Helpers/</span>
+│   └── <span class="new">[NEW] MSSqlHelper.cs</span>            # MSSQL 連線工具
+│
+├── <span class="folder">Repositories/</span>
+│   ├── <span class="new">[NEW] ActualTimeRepository.cs</span>   # Oracle 資料存取
+│   └── <span class="new">[NEW] TimesheetRepository.cs</span>    # MSSQL 資料存取
+│
+├── [MODIFY] Services/JobFactory.cs      # 註冊新任務
+├── [MODIFY] App.config                  # 新增連線字串
+└── [MODIFY] ES_Schedule.csproj          # 新增檔案參考</pre>
+            </div>
+        </section>
+
+        <!-- App.config 更新 -->
+        <section>
+            <h2>⚙️ 配置更新</h2>
+
+            <div class="card">
+                <h3>App.config 新增項目</h3>
+                <pre><code>&lt;connectionStrings&gt;
+  &lt;!-- 既有 --&gt;
+  &lt;add name="SourceDatabase" ... /&gt;
+  &lt;add name="DestinationDatabase" ... /&gt;
+  
+  &lt;!-- 新增 ActualTimeCalc 用 --&gt;
+  &lt;add name="JHDB" connectionString="..." providerName="Oracle.ManagedDataAccess.Client" /&gt;
+  &lt;add name="EVERSUN_AMESDB" connectionString="..." providerName="System.Data.SqlClient" /&gt;
+&lt;/connectionStrings&gt;
+
+&lt;appSettings&gt;
+  &lt;!-- 既有 --&gt;
+  &lt;add key="LogPath" value="Logs" /&gt;
+  &lt;add key="BatchSize" value="1000" /&gt;
+  
+  &lt;!-- 新增 ActualTimeCalc 用 --&gt;
+  &lt;add key="ActualTime_Schema_JHDB" value="JHAMES" /&gt;
+  &lt;add key="ActualTime_Schema_JHDB_SYS" value="JHSYS" /&gt;
+  &lt;add key="ActualTime_CalcDate" value="" /&gt;
+  &lt;add key="ActualTime_TxtOutputPath" value="Output" /&gt;
+&lt;/appSettings&gt;</code></pre>
+            </div>
+        </section>
+
+        <!-- JobFactory 註冊 -->
+        <section>
+            <h2>🔌 JobFactory 註冊</h2>
+
+            <div class="card">
+                <pre><code>private static readonly Dictionary&lt;string, Func&lt;IScheduleJob&gt;&gt; _jobs 
+    = new Dictionary&lt;string, Func&lt;IScheduleJob&gt;&gt;(StringComparer.OrdinalIgnoreCase)
+{
+    { "RepairRecordsTransfer", () =&gt; new RepairRecordsTransferJob() },
+    { "ActualTimeCalc", () =&gt; new ActualTimeCalcJob() },  // 新增
+};</code></pre>
+            </div>
+
+            <div class="alert alert-success">
+                <span>✅</span>
+                <div>
+                    <strong>Windows 工作排程器設定：</strong>
+                    <p>引數欄位填入 <code>ActualTimeCalc</code> 即可執行工時計算任務</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 重要修改 -->
+        <section>
+            <h2>⚠️ 重點重構項目</h2>
+
+            <div class="alert alert-warning">
+                <span>⚠️</span>
+                <div>
+                    <strong>Console.WriteLine 移除：</strong>
+                    <p>原始專案大量使用 <code>Console.WriteLine</code> 和自訂 <code>Log()</code> 方法，需全部改為
+                        <code>Logger.Instance.Info/Error</code>。</p>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>需移除/替換的程式碼</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>原始程式碼</th>
+                            <th>替換為</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>Console.WriteLine(Logstr)</code></td>
+                            <td><code>Logger.Instance.Info(Logstr)</code></td>
+                        </tr>
+                        <tr>
+                            <td><code>File.AppendAllText(_LogFile, ...)</code></td>
+                            <td>移除 (已由 Logger 處理)</td>
+                        </tr>
+                        <tr>
+                            <td><code>Environment.Exit(0)</code></td>
+                            <td><code>return 0</code> (配合 Exit Code 機制)</td>
+                        </tr>
+                        <tr>
+                            <td><code>throw ex</code></td>
+                            <td><code>Logger.Instance.Exception(ex); return 3</code></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- 驗證計畫 -->
+        <section>
+            <h2>✅ 驗證計畫</h2>
+
+            <div class="card">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>測試項目</th>
+                            <th>引數</th>
+                            <th>預期結果</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>編譯專案</td>
+                            <td>-</td>
+                            <td>0 錯誤</td>
+                        </tr>
+                        <tr>
+                            <td>執行 ActualTimeCalc</td>
+                            <td><code>ActualTimeCalc</code></td>
+                            <td>Exit Code 0</td>
+                        </tr>
+                        <tr>
+                            <td>檢查 Log 檔案</td>
+                            <td>-</td>
+                            <td>包含工時計算記錄</td>
+                        </tr>
+                        <tr>
+                            <td>檢查 TXT 輸出</td>
+                            <td>-</td>
+                            <td>SFIS_WorkTime_*.txt 產生</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- NuGet 套件 -->
+        <section>
+            <h2>📦 NuGet 套件需求</h2>
+
+            <div class="card">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>套件名稱</th>
+                            <th>版本</th>
+                            <th>用途</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Dapper</td>
+                            <td>2.1.x</td>
+                            <td>輕量 ORM</td>
+                        </tr>
+                        <tr>
+                            <td>Oracle.ManagedDataAccess</td>
+                            <td>21.x</td>
+                            <td>Oracle 連線</td>
+                        </tr>
+                        <tr>
+                            <td>System.Data.SqlClient</td>
+                            <td>4.x</td>
+                            <td>MSSQL 連線</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <footer>
+            <p>📄 ActualTimeCalc Migration Plan v1 | 2026-01-15</p>
+        </footer>
+    </div>
+
+    <script>
+        mermaid.initialize({ startOnLoad: true, theme: 'default' });
+    </script>
+</body>
+
+</html>

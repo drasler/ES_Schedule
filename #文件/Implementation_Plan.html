@@ -1,0 +1,1143 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ES_Schedule 排程系統實作規劃書</title>
+    <!-- Vue.js 3 CDN (依 Customization Rules 規範) -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <!-- SweetAlert2 CDN (依 Customization Rules 規範) -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <!-- Mermaid.js for Diagrams -->
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1d4ed8;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --gray-50: #f9fafb;
+            --gray-100: #f3f4f6;
+            --gray-200: #e5e7eb;
+            --gray-600: #4b5563;
+            --gray-700: #374151;
+            --gray-800: #1f2937;
+            --gray-900: #111827;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'Microsoft JhengHei', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 2rem;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.97);
+            border-radius: 20px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            padding: 3rem;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 3rem;
+            padding-bottom: 2rem;
+            border-bottom: 3px solid var(--primary);
+        }
+
+        header h1 {
+            font-size: 2.5rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        header .subtitle {
+            color: var(--gray-600);
+            font-size: 1.1rem;
+        }
+
+        .meta-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            background: var(--gray-50);
+            border-radius: 12px;
+        }
+
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .meta-item .label {
+            font-weight: 600;
+            color: var(--gray-700);
+        }
+
+        .meta-item .value {
+            color: var(--primary);
+        }
+
+        section {
+            margin-bottom: 2.5rem;
+        }
+
+        section h2 {
+            font-size: 1.5rem;
+            color: var(--gray-800);
+            margin-bottom: 1rem;
+            padding-left: 1rem;
+            border-left: 4px solid var(--primary);
+        }
+
+        section h3 {
+            font-size: 1.2rem;
+            color: var(--gray-700);
+            margin: 1.5rem 0 1rem;
+        }
+
+        .card {
+            background: white;
+            border: 1px solid var(--gray-200);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .alert {
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            margin: 1rem 0;
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+        }
+
+        .alert-warning {
+            background: #fef3c7;
+            border: 1px solid #f59e0b;
+            color: #92400e;
+        }
+
+        .alert-info {
+            background: #dbeafe;
+            border: 1px solid #3b82f6;
+            color: #1e40af;
+        }
+
+        .alert-success {
+            background: #d1fae5;
+            border: 1px solid #10b981;
+            color: #065f46;
+        }
+
+        .alert-danger {
+            background: #fee2e2;
+            border: 1px solid #ef4444;
+            color: #991b1b;
+        }
+
+        ul,
+        ol {
+            padding-left: 1.5rem;
+            margin: 0.5rem 0;
+        }
+
+        li {
+            margin: 0.5rem 0;
+            color: var(--gray-700);
+        }
+
+        code {
+            background: var(--gray-100);
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            color: var(--primary-dark);
+        }
+
+        pre {
+            background: var(--gray-900);
+            color: #e5e7eb;
+            padding: 1.5rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 1rem 0;
+        }
+
+        pre code {
+            background: none;
+            color: inherit;
+            padding: 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+        }
+
+        th,
+        td {
+            padding: 0.75rem 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--gray-200);
+        }
+
+        th {
+            background: var(--gray-50);
+            font-weight: 600;
+            color: var(--gray-700);
+        }
+
+        tr:hover {
+            background: var(--gray-50);
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .badge-new {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .badge-modify {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .file-tree {
+            background: var(--gray-50);
+            border-radius: 8px;
+            padding: 1.5rem;
+            font-family: 'Consolas', monospace;
+            font-size: 0.9rem;
+        }
+
+        .file-tree .folder {
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        .file-tree .new {
+            color: var(--success);
+        }
+
+        .highlight-box {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            border: 2px solid #f59e0b;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin: 1rem 0;
+        }
+
+        .highlight-box h3 {
+            color: #92400e;
+            margin-bottom: 0.5rem;
+        }
+
+        .scheduler-demo {
+            background: #1f2937;
+            border-radius: 12px;
+            padding: 1.5rem;
+            color: white;
+        }
+
+        .scheduler-demo table {
+            color: white;
+        }
+
+        .scheduler-demo th {
+            background: #374151;
+            color: #e5e7eb;
+        }
+
+        .scheduler-demo td {
+            border-color: #4b5563;
+        }
+
+        .scheduler-demo code {
+            background: #374151;
+            color: #fbbf24;
+        }
+
+        .task-list {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .task-list li {
+            padding: 0.5rem 0;
+            padding-left: 2rem;
+            position: relative;
+        }
+
+        .task-list li::before {
+            content: "☐";
+            position: absolute;
+            left: 0;
+            color: var(--gray-600);
+        }
+
+        .task-list li.done::before {
+            content: "☑";
+            color: var(--success);
+        }
+
+        .task-list li.in-progress::before {
+            content: "◐";
+            color: var(--warning);
+        }
+
+        /* Mermaid Diagram Styles */
+        .mermaid {
+            background: white;
+            padding: 1rem;
+            border-radius: 8px;
+            margin: 1rem 0;
+            text-align: center;
+        }
+
+        .diagram-container {
+            overflow-x: auto;
+            margin: 1rem 0;
+        }
+
+        footer {
+            text-align: center;
+            padding-top: 2rem;
+            border-top: 1px solid var(--gray-200);
+            color: var(--gray-600);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1>📋 ES_Schedule 排程系統實作規劃書</h1>
+            <p class="subtitle">可擴展式多排程任務架構 - Windows 工作排程器整合</p>
+        </header>
+
+        <div class="meta-info">
+            <div class="meta-item">
+                <span class="label">📅 建立日期:</span>
+                <span class="value">2026-01-15</span>
+            </div>
+            <div class="meta-item">
+                <span class="label">📦 專案名稱:</span>
+                <span class="value">ES_Schedule</span>
+            </div>
+            <div class="meta-item">
+                <span class="label">🔧 目標框架:</span>
+                <span class="value">.NET Framework 4.8</span>
+            </div>
+            <div class="meta-item">
+                <span class="label">📊 狀態:</span>
+                <span class="value">待審核 (v3)</span>
+            </div>
+        </div>
+
+        <!-- 任務心智圖 -->
+        <section>
+            <h2>🧠 任務心智圖</h2>
+            <div class="card">
+                <div class="diagram-container">
+                    <pre class="mermaid">
+mindmap
+  root((ES_Schedule))
+    Configuration
+      App.config
+        LogPath
+        BatchSize
+        ConnectionStrings
+      TransferConfigs.json
+    Core
+      Logger
+        MultiLevel
+        ThreadSafe
+      AppConfigService
+        Singleton
+    Jobs
+      IScheduleJob
+      JobFactory
+      RepairTransferJob
+    ErrorHandling
+      ExitCode
+        Success 0
+        ParamError 1
+        ConfigError 2
+        Exception 3
+    DataAccess
+      OracleRepository
+      MSSQLRepository
+                    </pre>
+                </div>
+            </div>
+        </section>
+
+        <!-- 系統流程圖 -->
+        <section>
+            <h2>🔄 系統流程圖</h2>
+            <div class="card">
+                <h3>主程式執行流程</h3>
+                <div class="diagram-container">
+                    <div class="mermaid">
+                        flowchart TD
+                        A[程式啟動] --> B{檢查命令列引數}
+                        B -->|無引數| C[記錄可用任務清單]
+                        C --> D[回傳 Exit Code 1]
+                        B -->|有引數| E[取得任務名稱]
+                        E --> F{JobFactory.CreateJob}
+                        F -->|找不到任務| G[記錄錯誤訊息]
+                        G --> D
+                        F -->|找到任務| H[執行 job.ExecuteAsync]
+                        H --> I{執行結果}
+                        I -->|成功| J[回傳 Exit Code 0]
+                        I -->|失敗| K[記錄例外訊息]
+                        K --> L[回傳 Exit Code 3]
+
+                        style A fill:#10b981,color:#fff
+                        style J fill:#10b981,color:#fff
+                        style D fill:#f59e0b,color:#fff
+                        style L fill:#ef4444,color:#fff
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>排程任務執行流程</h3>
+                <div class="diagram-container">
+                    <div class="mermaid">
+                        flowchart TD
+                        A[RepairRecordsTransferJob.ExecuteAsync] --> B[載入配置服務]
+                        B --> C{檢查連線字串}
+                        C -->|無效| D[記錄錯誤並回傳 2]
+                        C -->|有效| E[初始化 TransferService]
+                        E --> F[ExecuteAllTransfersAsync]
+                        F --> G[遍歷已啟用的轉移配置]
+                        G --> H[從 Oracle 查詢資料]
+                        H --> I{查詢結果}
+                        I -->|無資料| J[記錄警告並繼續]
+                        I -->|有資料| K[應用欄位映射]
+                        K --> L[寫入 MSSQL]
+                        L --> M[記錄成功筆數]
+                        J --> N{還有下一個配置?}
+                        M --> N
+                        N -->|是| G
+                        N -->|否| O[回傳成功計數]
+
+                        style A fill:#2563eb,color:#fff
+                        style O fill:#10b981,color:#fff
+                        style D fill:#ef4444,color:#fff
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 資料流程圖 -->
+        <section>
+            <h2>📊 資料流程圖</h2>
+            <div class="card">
+                <h3>資料轉移流程</h3>
+                <div class="diagram-container">
+                    <div class="mermaid">
+                        flowchart LR
+                        subgraph 來源["來源系統 (Oracle)"]
+                        O1[(Oracle DB)]
+                        O2[維修記錄表]
+                        end
+
+                        subgraph 處理["ES_Schedule 處理"]
+                        P1[OracleRepository]
+                        P2[TransferService]
+                        P3[欄位映射]
+                        P4[批次處理]
+                        end
+
+                        subgraph 目標["目標系統 (MSSQL)"]
+                        M1[MSSQLRepository]
+                        M2[(MSSQL DB)]
+                        M3[目標資料表]
+                        end
+
+                        subgraph 日誌["日誌系統"]
+                        L1[Logger]
+                        L2[日誌檔案]
+                        end
+
+                        O1 --> O2
+                        O2 -->|SourceQuery| P1
+                        P1 -->|DynamicEntity| P2
+                        P2 --> P3
+                        P3 --> P4
+                        P4 -->|BatchSize| M1
+                        M1 --> M2
+                        M2 --> M3
+
+                        P1 -.->|記錄查詢| L1
+                        P2 -.->|記錄處理| L1
+                        M1 -.->|記錄寫入| L1
+                        L1 --> L2
+
+                        style O1 fill:#f59e0b,color:#fff
+                        style M2 fill:#2563eb,color:#fff
+                        style L2 fill:#10b981,color:#fff
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>配置載入流程</h3>
+                <div class="diagram-container">
+                    <div class="mermaid">
+                        flowchart TD
+                        subgraph 配置檔案
+                        A1[App.config]
+                        A2[TransferConfigs.json]
+                        end
+
+                        subgraph AppConfigService
+                        B1[LoadConnectionStrings]
+                        B2[LoadAppSettings]
+                        B3[LoadTransferConfigs]
+                        end
+
+                        subgraph 配置屬性
+                        C1[SourceConnectionString]
+                        C2[DestinationConnectionString]
+                        C3[LogPath]
+                        C4[BatchSize]
+                        C5["TransferConfigs[]"]
+                        end
+
+                        A1 -->|connectionStrings| B1
+                        A1 -->|appSettings| B2
+                        A2 -->|JSON| B3
+
+                        B1 --> C1
+                        B1 --> C2
+                        B2 --> C3
+                        B2 --> C4
+                        B3 --> C5
+
+                        style A1 fill:#374151,color:#fff
+                        style A2 fill:#374151,color:#fff
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 任務清單 -->
+        <section>
+            <h2>📝 任務清單</h2>
+
+            <div class="card">
+                <h3>階段一：規劃與設計</h3>
+                <ul class="task-list">
+                    <li class="done">讀取現有文件與程式碼</li>
+                    <li class="done">分析現有 Console.WriteLine 使用情況</li>
+                    <li class="done">建立更新版的實作規劃書</li>
+                    <li>通知使用者審核規劃書</li>
+                </ul>
+            </div>
+
+            <div class="card">
+                <h3>階段二：配置設定</h3>
+                <ul class="task-list">
+                    <li>更新 App.config 新增 LogPath 設定</li>
+                    <li>更新 App.config 新增其他相關設定 (BatchSize 等)</li>
+                </ul>
+            </div>
+
+            <div class="card">
+                <h3>階段三：核心元件實作</h3>
+                <ul class="task-list">
+                    <li>建立 Common/Logger.cs - 日誌服務類別</li>
+                    <li>建立 Config/AppConfigService.cs - 配置服務類別</li>
+                    <li>建立 Config/TransferConfig.cs - 轉移配置模型</li>
+                </ul>
+            </div>
+
+            <div class="card">
+                <h3>階段四：錯誤處理機制</h3>
+                <ul class="task-list">
+                    <li>在 Logger 中加入完整的例外處理方法</li>
+                    <li>確保所有 Log 方法包含 try-catch</li>
+                    <li>主程式加入 Exit Code 回傳機制</li>
+                </ul>
+            </div>
+
+            <div class="card">
+                <h3>階段五：更新規劃書</h3>
+                <ul class="task-list">
+                    <li class="done">更新 Implementation_Plan.html 新增 Log 相關章節</li>
+                    <li class="done">新增錯誤處理機制說明</li>
+                    <li class="done">新增 LogPath 配置說明</li>
+                    <li class="done">新增系統流程圖</li>
+                    <li class="done">新增資料流程圖</li>
+                    <li class="done">新增任務心智圖</li>
+                </ul>
+            </div>
+
+            <div class="card">
+                <h3>階段六：驗證</h3>
+                <ul class="task-list">
+                    <li>編譯專案確認無錯誤</li>
+                    <li>執行測試確認 Log 正常寫入</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- 現況分析 -->
+        <section>
+            <h2>🔍 現況分析：Console.WriteLine 使用位置</h2>
+
+            <div class="card">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>檔案</th>
+                            <th>行號</th>
+                            <th>用途</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>Program.cs</code></td>
+                            <td>29-31, 41, 55, 59, 65, 75, 84-86, 91, 94, 100, 108, 113, 121-123</td>
+                            <td>程式啟動、配置檔、執行進度</td>
+                        </tr>
+                        <tr>
+                            <td><code>Logger.cs</code></td>
+                            <td>187, 200</td>
+                            <td>Log 方法本身使用 Console 輸出</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="alert alert-danger">
+                <span>⚠️</span>
+                <div>
+                    <strong>重要修改：</strong>
+                    <p>作為 Windows 工作排程器的排程任務，程式不應該有任何 Console 輸出。所有訊息都應寫入日誌檔案。</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 日誌機制 -->
+        <section>
+            <h2>📁 日誌機制設計</h2>
+
+            <h3>LogPath 配置說明</h3>
+            <div class="card">
+                <p>在 <code>App.config</code> 中設定日誌路徑：</p>
+                <pre><code>&lt;appSettings&gt;
+  &lt;add key="LogPath" value="Logs" /&gt;
+  &lt;add key="BatchSize" value="1000" /&gt;
+&lt;/appSettings&gt;</code></pre>
+                <ul>
+                    <li><strong>LogPath</strong>: 日誌檔案儲存目錄，可使用相對或絕對路徑</li>
+                    <li><strong>BatchSize</strong>: 資料轉移批次大小，預設 1000 筆</li>
+                </ul>
+            </div>
+
+            <h3>Logger 類別設計</h3>
+            <div class="card">
+                <ul>
+                    <li>使用 <strong>Singleton 模式</strong> (<code>Lazy&lt;Logger&gt;</code>)</li>
+                    <li>支援多級別日誌: <code>Debug</code>, <code>Info</code>, <code>Warning</code>, <code>Error</code>,
+                        <code>Fatal</code>
+                    </li>
+                    <li>使用 <strong>Thread-Safe 鎖</strong> 進行檔案寫入</li>
+                    <li>日誌檔案命名格式：<code>{yyyy-MM-dd}.log</code></li>
+                    <li><strong>移除 Console.WriteLine</strong> - 僅寫入日誌檔案</li>
+                </ul>
+
+                <h4>日誌格式範例</h4>
+                <pre><code>[2026-01-15 14:30:25.123] [Info   ] [Thread-1] 程式啟動，正在載入設定...
+[2026-01-15 14:30:25.456] [Info   ] [Thread-1] 配置服務初始化完成
+[2026-01-15 14:30:26.789] [Error  ] [Thread-1] 資料庫連線失敗
+例外類型: OracleException
+例外訊息: ORA-12154: TNS:無法解析指定的連線識別碼</code></pre>
+            </div>
+        </section>
+
+        <!-- 錯誤處理機制 -->
+        <section>
+            <h2>🛡️ 錯誤處理機制</h2>
+
+            <h3>Exit Code 規範</h3>
+            <div class="card">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Exit Code</th>
+                            <th>意義</th>
+                            <th>說明</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>0</code></td>
+                            <td>✅ 成功執行</td>
+                            <td>排程任務正常完成</td>
+                        </tr>
+                        <tr>
+                            <td><code>1</code></td>
+                            <td>⚠️ 參數錯誤</td>
+                            <td>未指定任務名稱或找不到指定任務</td>
+                        </tr>
+                        <tr>
+                            <td><code>2</code></td>
+                            <td>⚠️ 配置錯誤</td>
+                            <td>連線字串缺失或配置檔無效</td>
+                        </tr>
+                        <tr>
+                            <td><code>3</code></td>
+                            <td>❌ 執行例外</td>
+                            <td>執行過程中發生未處理的例外</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3>主程式流程</h3>
+            <div class="card">
+                <pre><code>static async Task&lt;int&gt; Main(string[] args)
+{
+    try
+    {
+        Logger.Instance.Info($"程式啟動時間: {DateTime.Now}");
+        
+        string jobName = args.Length &gt; 0 ? args[0] : null;
+        
+        if (string.IsNullOrEmpty(jobName))
+        {
+            Logger.Instance.Info("未指定任務名稱，顯示可用任務清單");
+            foreach (var job in JobFactory.GetAvailableJobs())
+            {
+                Logger.Instance.Info($"  - {job}");
+            }
+            return 1;
+        }
+        
+        var job = JobFactory.CreateJob(jobName);
+        if (job == null)
+        {
+            Logger.Instance.Error($"找不到排程任務: {jobName}");
+            return 1;
+        }
+        
+        return await job.ExecuteAsync();
+    }
+    catch (Exception ex)
+    {
+        Logger.Instance.Exception(ex, "程式執行過程中發生未處理的例外");
+        return 3;
+    }
+}</code></pre>
+            </div>
+        </section>
+
+        <!-- 核心重點：Windows 工作排程器整合 -->
+        <section>
+            <h2>🎯 核心設計：Windows 工作排程器整合</h2>
+
+            <div class="highlight-box">
+                <h3>⭐ 使用方式說明</h3>
+                <p>編譯後的 <code>ES_Schedule.exe</code> 可在 Windows 工作排程器中設定，透過「<strong>新增引數
+                        (可省略)(A):</strong>」欄位傳入參數來指定要執行的排程任務。</p>
+            </div>
+
+            <h3>工作排程器設定範例</h3>
+            <div class="scheduler-demo">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>欄位</th>
+                            <th>設定值</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>程式或指令碼 (P):</strong></td>
+                            <td><code>D:\Path\To\ES_Schedule.exe</code></td>
+                        </tr>
+                        <tr>
+                            <td><strong>新增引數 (可省略)(A):</strong></td>
+                            <td><code>RepairRecordsTransfer</code></td>
+                        </tr>
+                        <tr>
+                            <td><strong>開始位置 (可省略)(T):</strong></td>
+                            <td><code>D:\Path\To\</code></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="alert alert-info">
+                <span>💡</span>
+                <div>
+                    <strong>運作原理：</strong>
+                    <p>程式透過 <code>args[0]</code> 直接讀取「新增引數」欄位的值，自動判斷要執行哪一個排程任務。不需要使用 <code>--job=</code>
+                        等複雜格式，<strong>只需輸入任務名稱即可</strong>。</p>
+                </div>
+            </div>
+
+            <h3>多排程任務部署範例</h3>
+            <div class="card">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>排程名稱</th>
+                            <th>程式路徑</th>
+                            <th>引數</th>
+                            <th>執行時間</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>維修記錄轉移</td>
+                            <td><code>ES_Schedule.exe</code></td>
+                            <td><code>RepairRecordsTransfer</code></td>
+                            <td>每日 02:00</td>
+                        </tr>
+                        <tr>
+                            <td>每日報表</td>
+                            <td><code>ES_Schedule.exe</code></td>
+                            <td><code>DailyReport</code></td>
+                            <td>每日 08:00</td>
+                        </tr>
+                        <tr>
+                            <td>資料清理</td>
+                            <td><code>ES_Schedule.exe</code></td>
+                            <td><code>DataCleanup</code></td>
+                            <td>每週日 03:00</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- 目錄結構 -->
+        <section>
+            <h2>📁 專案目錄結構</h2>
+            <div class="file-tree">
+                <pre>ES_Schedule/
+├── <span class="folder">Common/</span>
+│   └── <span class="new">[NEW] Logger.cs</span>              # 日誌服務（無 Console 輸出）
+│
+├── <span class="folder">Config/</span>
+│   ├── <span class="new">[NEW] AppConfigService.cs</span>    # 配置服務
+│   └── <span class="new">[NEW] TransferConfig.cs</span>      # 轉移配置模型
+│
+├── <span class="folder">Entities/</span>
+│   └── <span class="new">[NEW] DynamicEntity.cs</span>       # 動態實體類
+│
+├── <span class="folder">Interfaces/</span>
+│   ├── <span class="new">[NEW] IScheduleJob.cs</span>        # 排程任務介面 ⭐
+│   └── <span class="new">[NEW] IRepository.cs</span>         # 資料存取介面
+│
+├── <span class="folder">Repositories/</span>
+│   ├── <span class="new">[NEW] OracleRepository.cs</span>
+│   └── <span class="new">[NEW] MSSQLRepository.cs</span>
+│
+├── <span class="folder">Jobs/</span>                            # 排程任務實作 ⭐
+│   └── <span class="new">[NEW] RepairRecordsTransferJob.cs</span>
+│
+├── <span class="folder">Services/</span>
+│   ├── <span class="new">[NEW] JobFactory.cs</span>          # 任務工廠 ⭐
+│   └── <span class="new">[NEW] TransferService.cs</span>
+│
+├── <span class="folder">Settings/</span>
+│   └── <span class="new">[NEW] TransferConfigs.json</span>
+│
+├── Program.cs                       # 主程式 (重寫)
+├── App.config                       # 配置檔 (更新)
+└── ES_Schedule.csproj               # 專案檔 (更新)</pre>
+            </div>
+        </section>
+
+        <!-- 核心介面 -->
+        <section>
+            <h2>🔌 核心介面設計</h2>
+
+            <h3>IScheduleJob 介面</h3>
+            <div class="card">
+                <pre><code>/// &lt;summary&gt;
+/// 排程任務介面 - 所有排程任務必須實作
+/// &lt;/summary&gt;
+public interface IScheduleJob
+{
+    /// &lt;summary&gt;
+    /// 任務識別名稱 (對應工作排程器的引數)
+    /// &lt;/summary&gt;
+    string JobName { get; }
+    
+    /// &lt;summary&gt;
+    /// 任務描述
+    /// &lt;/summary&gt;
+    string Description { get; }
+    
+    /// &lt;summary&gt;
+    /// 執行排程任務
+    /// &lt;/summary&gt;
+    /// &lt;returns&gt;0=成功, 非0=失敗&lt;/returns&gt;
+    Task&lt;int&gt; ExecuteAsync();
+}</code></pre>
+            </div>
+
+            <h3>JobFactory 任務工廠</h3>
+            <div class="card">
+                <pre><code>public static class JobFactory
+{
+    // 已註冊的排程任務
+    private static readonly Dictionary&lt;string, Func&lt;IScheduleJob&gt;&gt; _jobs 
+        = new Dictionary&lt;string, Func&lt;IScheduleJob&gt;&gt;(StringComparer.OrdinalIgnoreCase)
+    {
+        { "RepairRecordsTransfer", () =&gt; new RepairRecordsTransferJob() },
+        // 未來新增其他任務只需在此註冊
+        // { "DailyReport", () =&gt; new DailyReportJob() },
+    };
+    
+    public static IScheduleJob CreateJob(string jobName)
+    {
+        if (_jobs.TryGetValue(jobName, out var factory))
+            return factory();
+        return null;
+    }
+    
+    public static IEnumerable&lt;string&gt; GetAvailableJobs() =&gt; _jobs.Keys;
+}</code></pre>
+            </div>
+        </section>
+
+        <!-- 實作計畫 -->
+        <section>
+            <h2>📝 實作計畫</h2>
+
+            <div class="card">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Phase</th>
+                            <th>內容</th>
+                            <th>檔案數</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Phase 1</strong></td>
+                            <td>核心介面 (IScheduleJob, JobFactory)</td>
+                            <td>3 個</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Phase 2</strong></td>
+                            <td>共用元件遷移 (Logger, Config, Entity)</td>
+                            <td>4 個</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Phase 3</strong></td>
+                            <td>資料存取層 (Oracle, MSSQL Repository)</td>
+                            <td>3 個</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Phase 4</strong></td>
+                            <td>業務邏輯 (TransferService, Job)</td>
+                            <td>2 個</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Phase 5</strong></td>
+                            <td>主程式與配置更新</td>
+                            <td>4 個</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- 驗證計畫 -->
+        <section>
+            <h2>✅ 驗證計畫</h2>
+            <div class="card">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>測試項目</th>
+                            <th>引數</th>
+                            <th>預期結果</th>
+                            <th>Exit Code</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>無引數執行</td>
+                            <td>(空)</td>
+                            <td>記錄可用任務清單至 Log</td>
+                            <td>1</td>
+                        </tr>
+                        <tr>
+                            <td>執行轉移任務</td>
+                            <td><code>RepairRecordsTransfer</code></td>
+                            <td>成功執行資料轉移</td>
+                            <td>0</td>
+                        </tr>
+                        <tr>
+                            <td>無效任務名稱</td>
+                            <td><code>InvalidJob</code></td>
+                            <td>記錄錯誤訊息至 Log</td>
+                            <td>1</td>
+                        </tr>
+                        <tr>
+                            <td>檢查日誌檔案</td>
+                            <td>-</td>
+                            <td>Logs/{yyyy-MM-dd}.log 建立成功</td>
+                            <td>-</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3>驗證命令</h3>
+            <div class="card">
+                <pre><code># 編譯專案
+msbuild ES_Schedule.sln /t:Rebuild /p:Configuration=Debug
+
+# 無參數執行測試
+.\bin\Debug\ES_Schedule.exe
+$LASTEXITCODE  # 預期: 1
+
+# 無效任務測試
+.\bin\Debug\ES_Schedule.exe InvalidJob
+$LASTEXITCODE  # 預期: 1
+
+# 檢查日誌檔案
+Get-Content ".\bin\Debug\Logs\$(Get-Date -Format 'yyyy-MM-dd').log"</code></pre>
+            </div>
+        </section>
+
+        <!-- 擴展指南 -->
+        <section>
+            <h2>🚀 新增排程任務步驟</h2>
+            <div class="card">
+                <ol>
+                    <li>在 <code>Jobs/</code> 建立新類別，實作 <code>IScheduleJob</code></li>
+                    <li>在 <code>JobFactory._jobs</code> 中註冊任務名稱</li>
+                    <li>編譯專案</li>
+                    <li>在 Windows 工作排程器新增排程，引數填入任務名稱</li>
+                </ol>
+            </div>
+        </section>
+
+        <!-- 規範符合性檢查 -->
+        <section>
+            <h2>📋 規範符合性檢查</h2>
+            <div class="card">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>規範項目</th>
+                            <th>狀態</th>
+                            <th>說明</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>HTML 格式文件</td>
+                            <td>✅ 符合</td>
+                            <td>使用獨立 HTML 檔案 (.html)</td>
+                        </tr>
+                        <tr>
+                            <td>Vue.js 3 CDN</td>
+                            <td>✅ 符合</td>
+                            <td>已在 &lt;head&gt; 中引入</td>
+                        </tr>
+                        <tr>
+                            <td>SweetAlert2 CDN</td>
+                            <td>✅ 符合</td>
+                            <td>已在 &lt;head&gt; 中引入</td>
+                        </tr>
+                        <tr>
+                            <td>Google Chart / Mermaid</td>
+                            <td>✅ 符合</td>
+                            <td>使用 Mermaid.js 繪製流程圖</td>
+                        </tr>
+                        <tr>
+                            <td>系統流程圖</td>
+                            <td>✅ 符合</td>
+                            <td>主程式流程、排程任務執行流程</td>
+                        </tr>
+                        <tr>
+                            <td>資料流程圖</td>
+                            <td>✅ 符合</td>
+                            <td>資料轉移流程、配置載入流程</td>
+                        </tr>
+                        <tr>
+                            <td>任務心智圖</td>
+                            <td>✅ 符合</td>
+                            <td>ES_Schedule 功能架構心智圖</td>
+                        </tr>
+                        <tr>
+                            <td>.NET Framework 4.8</td>
+                            <td>✅ 符合</td>
+                            <td>遵循現有專案框架版本</td>
+                        </tr>
+                        <tr>
+                            <td>文件存放位置</td>
+                            <td>✅ 符合</td>
+                            <td>存放於 #文件 目錄</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <footer>
+            <p>📄 ES_Schedule Implementation Plan v3 | 2026-01-15 | 符合 Customization Rules 規範</p>
+        </footer>
+    </div>
+
+    <script>
+        // Initialize Mermaid
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'default',
+            flowchart: {
+                useMaxWidth: true,
+                htmlLabels: true,
+                curve: 'basis'
+            },
+            mindmap: {
+                useMaxWidth: true
+            }
+        });
+    </script>
+</body>
+
+</html>

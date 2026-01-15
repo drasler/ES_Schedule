@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ES_Schedule 核心架構實踐書</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1d4ed8;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --info: #06b6d4;
+            --gray-50: #f9fafb;
+            --gray-100: #f3f4f6;
+            --gray-200: #e5e7eb;
+            --gray-600: #4b5563;
+            --gray-700: #374151;
+            --gray-800: #1f2937;
+            --gray-900: #111827;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'Microsoft JhengHei', sans-serif;
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            min-height: 100vh;
+            padding: 2rem;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.97);
+            border-radius: 20px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            padding: 3rem;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 3rem;
+            padding-bottom: 2rem;
+            border-bottom: 3px solid var(--primary);
+        }
+
+        header h1 {
+            font-size: 2.2rem;
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 0.5rem 1.5rem;
+            background: var(--success);
+            color: white;
+            border-radius: 20px;
+            font-weight: 600;
+            margin-top: 1rem;
+        }
+
+        .meta-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            background: var(--gray-50);
+            border-radius: 12px;
+        }
+
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .meta-item .label {
+            font-weight: 600;
+            color: var(--gray-700);
+        }
+
+        .meta-item .value {
+            color: var(--primary);
+        }
+
+        section {
+            margin-bottom: 2.5rem;
+        }
+
+        section h2 {
+            font-size: 1.5rem;
+            color: var(--gray-800);
+            margin-bottom: 1rem;
+            padding-left: 1rem;
+            border-left: 4px solid var(--primary);
+        }
+
+        section h3 {
+            font-size: 1.2rem;
+            color: var(--gray-700);
+            margin: 1.5rem 0 1rem;
+        }
+
+        .card {
+            background: white;
+            border: 1px solid var(--gray-200);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .alert {
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            margin: 1rem 0;
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+        }
+
+        .alert-success {
+            background: #d1fae5;
+            border: 1px solid #10b981;
+            color: #065f46;
+        }
+
+        .alert-info {
+            background: #dbeafe;
+            border: 1px solid #3b82f6;
+            color: #1e40af;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+        }
+
+        th,
+        td {
+            padding: 0.75rem 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--gray-200);
+        }
+
+        th {
+            background: var(--gray-50);
+            font-weight: 600;
+            color: var(--gray-700);
+        }
+
+        .status-done {
+            color: var(--success);
+            font-weight: 600;
+        }
+
+        code {
+            background: var(--gray-100);
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-family: 'Consolas', monospace;
+            color: var(--primary-dark);
+            font-size: 0.9rem;
+        }
+
+        pre {
+            background: var(--gray-900);
+            color: #e5e7eb;
+            padding: 1.5rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 1rem 0;
+            font-size: 0.85rem;
+        }
+
+        pre code {
+            background: none;
+            color: inherit;
+            padding: 0;
+        }
+
+        .mermaid {
+            background: white;
+            padding: 1rem;
+            border-radius: 8px;
+            margin: 1rem 0;
+            text-align: center;
+        }
+
+        .file-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1rem;
+        }
+
+        .file-card {
+            background: var(--gray-50);
+            border-radius: 8px;
+            padding: 1rem;
+            border-left: 4px solid var(--primary);
+        }
+
+        .file-card h4 {
+            color: var(--gray-800);
+            margin-bottom: 0.5rem;
+            font-size: 0.95rem;
+        }
+
+        .file-card p {
+            color: var(--gray-600);
+            font-size: 0.85rem;
+        }
+
+        .log-preview {
+            background: #1e1e1e;
+            color: #9cdcfe;
+            padding: 1rem;
+            border-radius: 8px;
+            font-family: 'Consolas', monospace;
+            font-size: 0.8rem;
+            line-height: 1.8;
+            overflow-x: auto;
+        }
+
+        .log-preview .timestamp {
+            color: #ce9178;
+        }
+
+        .log-preview .level {
+            color: #4ec9b0;
+        }
+
+        .log-preview .thread {
+            color: #608b4e;
+        }
+
+        footer {
+            text-align: center;
+            padding-top: 2rem;
+            border-top: 1px solid var(--gray-200);
+            color: var(--gray-600);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1>📘 ES_Schedule 核心架構實踐書</h1>
+            <p style="color: #4b5563;">可擴展式多排程任務架構 - 實作記錄文件</p>
+            <span class="status-badge">✅ 實作完成</span>
+        </header>
+
+        <div class="meta-info">
+            <div class="meta-item">
+                <span class="label">📅 實作日期:</span>
+                <span class="value">2026-01-15</span>
+            </div>
+            <div class="meta-item">
+                <span class="label">📦 專案名稱:</span>
+                <span class="value">ES_Schedule</span>
+            </div>
+            <div class="meta-item">
+                <span class="label">🔧 目標框架:</span>
+                <span class="value">.NET Framework 4.8</span>
+            </div>
+            <div class="meta-item">
+                <span class="label">📊 編譯狀態:</span>
+                <span class="value" style="color: #10b981;">成功 (0 錯誤)</span>
+            </div>
+        </div>
+
+        <!-- 實作摘要 -->
+        <section>
+            <h2>📋 實作摘要</h2>
+            <div class="card">
+                <p>本專案建立了一個可擴展的排程任務系統，支援透過 Windows 工作排程器執行不同的排程任務。採用工廠模式設計，只需在 <code>JobFactory</code>
+                    中註冊新任務，即可透過命令列引數執行。</p>
+
+                <div class="alert alert-success">
+                    <span>✅</span>
+                    <div>
+                        <strong>核心特點：</strong>
+                        <ul>
+                            <li>無 Console 輸出 - 所有訊息寫入 Log 檔案</li>
+                            <li>Exit Code 機制 - 0=成功, 1=參數錯誤, 2=配置錯誤, 3=執行例外</li>
+                            <li>Singleton Logger - Thread-Safe 日誌服務</li>
+                            <li>工廠模式 - 易於擴展新任務</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 已完成檔案清單 -->
+        <section>
+            <h2>📁 已完成檔案清單</h2>
+
+            <div class="file-grid">
+                <div class="file-card">
+                    <h4>📄 Program.cs</h4>
+                    <p>主程式進入點，實作 Exit Code 機制，無 Console 輸出</p>
+                </div>
+                <div class="file-card">
+                    <h4>📄 Common/Logger.cs</h4>
+                    <p>日誌服務類別，Singleton、Thread-Safe、多級別日誌</p>
+                </div>
+                <div class="file-card">
+                    <h4>📄 Config/AppConfigService.cs</h4>
+                    <p>配置服務，載入連線字串、應用程式設定</p>
+                </div>
+                <div class="file-card">
+                    <h4>📄 Config/TransferConfig.cs</h4>
+                    <p>轉移配置模型，定義資料轉移任務結構</p>
+                </div>
+                <div class="file-card">
+                    <h4>📄 Interfaces/IScheduleJob.cs</h4>
+                    <p>排程任務介面，所有任務必須實作</p>
+                </div>
+                <div class="file-card">
+                    <h4>📄 Services/JobFactory.cs</h4>
+                    <p>任務工廠，負責建立與管理排程任務</p>
+                </div>
+                <div class="file-card">
+                    <h4>📄 Jobs/RepairRecordsTransferJob.cs</h4>
+                    <p>維修記錄轉移任務實作</p>
+                </div>
+                <div class="file-card">
+                    <h4>📄 Services/ActualTimeCalcService.cs</h4>
+                    <p>工時計算服務，實作資料讀取與寫入邏輯</p>
+                </div>
+                <div class="file-card">
+                    <h4>📄 Jobs/ActualTimeCalcJob.cs</h4>
+                    <p>工時計算排程任務實作，整合服務與參數</p>
+                </div>
+                <div class="file-card">
+                    <h4>📄 Models/*.cs</h4>
+                    <p>ActualTime, ActualTimeDetail, TimesheetRecord 資料模型</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 專案架構圖 -->
+        <section>
+            <h2>🏗️ 專案架構圖</h2>
+            <div class="card">
+                <pre class="mermaid">
+graph TB
+    subgraph Entry["程式進入點"]
+        A[Program.cs]
+    end
+    
+    subgraph Core["核心服務"]
+        B[Logger.cs]
+        C[AppConfigService.cs]
+    end
+    
+    subgraph Factory["工廠模式"]
+        D[JobFactory.cs]
+    end
+    
+    subgraph Interface["介面定義"]
+        E["IScheduleJob"]
+    end
+    
+    subgraph Jobs["排程任務"]
+        F[RepairRecordsTransferJob]
+        G[ActualTimeCalcJob]
+        H["其他任務..."]
+    end
+    
+    subgraph Services["業務邏輯"]
+        S1[ActualTimeCalcService]
+    end
+
+    subgraph Config["配置"]
+        I[App.config]
+        J[TransferConfigs.json]
+    end
+    
+    A --> D
+    A --> B
+    D --> E
+    E --> F
+    E --> G
+    E --> H
+    F --> C
+    G --> S1
+    S1 --> C
+    C --> I
+    C --> J
+    
+    style A fill:#2563eb,color:#fff
+    style D fill:#059669,color:#fff
+    style E fill:#f59e0b,color:#fff
+    style G fill:#059669,color:#fff
+                </pre>
+            </div>
+        </section>
+
+        <!-- Exit Code 機制 -->
+        <section>
+            <h2>🔢 Exit Code 機制</h2>
+            <div class="card">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Exit Code</th>
+                            <th>意義</th>
+                            <th>觸發情境</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>0</code></td>
+                            <td class="status-done">成功執行</td>
+                            <td>任務正常完成</td>
+                        </tr>
+                        <tr>
+                            <td><code>1</code></td>
+                            <td>參數錯誤</td>
+                            <td>無引數、找不到指定任務</td>
+                        </tr>
+                        <tr>
+                            <td><code>2</code></td>
+                            <td>配置錯誤</td>
+                            <td>連線字串缺失、配置檔無效</td>
+                        </tr>
+                        <tr>
+                            <td><code>3</code></td>
+                            <td>執行例外</td>
+                            <td>未處理的例外 (如資料庫連線失敗)</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Log 輸出範例 -->
+        <section>
+            <h2>📝 Log 輸出範例</h2>
+            <div class="card">
+                <h3>執行 ActualTimeCalc 任務</h3>
+                <div class="log-preview">
+                    <span class="timestamp">[2026-01-15 16:44:30.878]</span> <span class="level">[Info ]</span> <span
+                        class="thread">[Thread-1]</span> 開始執行排程任務: ActualTimeCalc
+                    <span class="timestamp">[2026-01-15 16:44:30.879]</span> <span class="level">[Info ]</span> <span
+                        class="thread">[Thread-1]</span> 開始計算工時資料，計算日期: 2026-01-12
+                    <span class="timestamp">[2026-01-15 16:44:31.369]</span> <span class="level">[Info ]</span> <span
+                        class="thread">[Thread-1]</span> 從 AMES_DB 讀取到 726 筆工時資料
+                    <span class="timestamp">[2026-01-15 16:44:31.809]</span> <span class="level">[Info ]</span> <span
+                        class="thread">[Thread-1]</span> 計算 0020 工單: 105248301A01 工時: 351.00 完成數: 0
+                    <span class="timestamp">[2026-01-15 16:44:34.868]</span> <span class="level">[Info ]</span> <span
+                        class="thread">[Thread-1]</span> SAP 上傳檔案已產生: .../SFIS_WorkTime_20260115164434.txt
+                    <span class="timestamp">[2026-01-15 16:44:34.868]</span> <span class="level">[Info ]</span> <span
+                        class="thread">[Thread-1]</span> 任務執行完成，Exit Code: 0
+                </div>
+            </div>
+        </section>
+
+        <!-- 驗證結果 -->
+        <section>
+            <h2>✅ 驗證結果</h2>
+            <div class="card">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>測試項目</th>
+                            <th>測試引數</th>
+                            <th>預期結果</th>
+                            <th>實際結果</th>
+                            <th>狀態</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>編譯專案</td>
+                            <td>-</td>
+                            <td>0 錯誤, 0 警告</td>
+                            <td>0 錯誤, 0 警告</td>
+                            <td class="status-done">✅ 通過</td>
+                        </tr>
+                        <tr>
+                            <td>無引數執行</td>
+                            <td><code>(無)</code></td>
+                            <td>Exit Code 1</td>
+                            <td>Exit Code 1</td>
+                            <td class="status-done">✅ 通過</td>
+                        </tr>
+                        <tr>
+                            <td>執行轉移任務</td>
+                            <td><code>RepairRecordsTransfer</code></td>
+                            <td>Exit Code 0/3</td>
+                            <td>Exit Code 0</td>
+                            <td class="status-done">✅ 通過 (已模擬)</td>
+                        </tr>
+                        <tr>
+                            <td>執行工時計算</td>
+                            <td><code>ActualTimeCalc</code></td>
+                            <td>Exit Code 0</td>
+                            <td>Exit Code 0</td>
+                            <td class="status-done">✅ 通過 (連線成功)</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- 使用方式 -->
+        <section>
+            <h2>🚀 使用方式</h2>
+
+            <div class="card">
+                <h3>Windows 工作排程器設定</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>欄位</th>
+                            <th>設定值</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>程式或指令碼</td>
+                            <td><code>D:\Path\To\ES_Schedule.exe</code></td>
+                        </tr>
+                        <tr>
+                            <td>新增引數</td>
+                            <td><code>ActualTimeCalc</code> (或其他任務名稱)</td>
+                        </tr>
+                        <tr>
+                            <td>開始位置</td>
+                            <td><code>D:\Path\To\</code></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="card">
+                <h3>新增任務步驟</h3>
+                <ol>
+                    <li>在 <code>Jobs/</code> 目錄建立新類別，實作 <code>IScheduleJob</code> 介面</li>
+                    <li>在 <code>JobFactory._jobs</code> 字典中註冊新任務</li>
+                    <li>重新編譯專案</li>
+                    <li>使用任務名稱作為命令列引數執行</li>
+                </ol>
+            </div>
+        </section>
+
+        <!-- 下一步 -->
+        <section>
+            <h2>📌 下一步</h2>
+            <div class="alert alert-info">
+                <span>💡</span>
+                <div>
+                    <strong>維護建議：</strong>
+                    <ul>
+                        <li>定期備份 Logs 資料夾</li>
+                        <li>監控 Windows 排程器的執行結果代碼</li>
+                        <li>更新 App.config 連線字串 (正式環境)</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <footer>
+            <p>📘 ES_Schedule Implementation Record v2 | 更新日期: 2026-01-15</p>
+        </footer>
+    </div>
+
+    <script>
+        mermaid.initialize({ startOnLoad: true, theme: 'default' });
+    </script>
+</body>
+
+</html>

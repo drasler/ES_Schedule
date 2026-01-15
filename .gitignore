@@ -1,0 +1,17 @@
+# Visual Studio
+.vs/
+*.user
+*.suo
+[Bb]in/
+[Oo]bj/
+
+# NuGet
+packages/
+
+# Project Specific
+Logs/
+Output/
+Settings/TransferConfigs.json
+
+# User Rules
+@*
