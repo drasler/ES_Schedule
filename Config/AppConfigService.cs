@@ -29,12 +29,12 @@ namespace ES_Schedule.Config
         /// <summary>
         /// 來源資料庫(Oracle)連線字串
         /// </summary>
-        public string SourceConnectionString { get; private set; }
+        public string JHDBConnectionString { get; private set; }
 
         /// <summary>
         /// 目標資料庫(MSSQL)連線字串
         /// </summary>
-        public string DestinationConnectionString { get; private set; }
+        public string MiddleDatabaseConnectionString { get; private set; }
 
         /// <summary>
         /// 批次處理大小
@@ -69,17 +69,17 @@ namespace ES_Schedule.Config
         {
             try
             {
-                SourceConnectionString = ConfigurationManager.ConnectionStrings["SourceDatabase"]?.ConnectionString;
-                DestinationConnectionString = ConfigurationManager.ConnectionStrings["DestinationDatabase"]?.ConnectionString;
+                JHDBConnectionString = ConfigurationManager.ConnectionStrings["JHDB"]?.ConnectionString;
+                MiddleDatabaseConnectionString = ConfigurationManager.ConnectionStrings["MiddleDatabase"]?.ConnectionString;
 
-                if (string.IsNullOrEmpty(SourceConnectionString))
+                if (string.IsNullOrEmpty(JHDBConnectionString))
                 {
-                    Logger.Instance.Warning("找不到來源資料庫連線字串設定 (SourceDatabase)");
+                    Logger.Instance.Warning("找不到來源資料庫連線字串設定 (JHDB)");
                 }
                 
-                if (string.IsNullOrEmpty(DestinationConnectionString))
+                if (string.IsNullOrEmpty(MiddleDatabaseConnectionString))
                 {
-                    Logger.Instance.Warning("找不到目標資料庫連線字串設定 (DestinationDatabase)");
+                    Logger.Instance.Warning("找不到目標資料庫連線字串設定 (MiddleDatabase)");
                 }
 
                 Logger.Instance.Info("資料庫連線字串載入完成");

@@ -35,8 +35,8 @@ namespace ES_Schedule.Jobs
                 var configService = AppConfigService.Instance;
                 
                 // 檢查連線字串
-                if (string.IsNullOrEmpty(configService.SourceConnectionString) || 
-                    string.IsNullOrEmpty(configService.DestinationConnectionString))
+                if (string.IsNullOrEmpty(configService.JHDBConnectionString) || 
+                    string.IsNullOrEmpty(configService.MiddleDatabaseConnectionString))
                 {
                     Logger.Instance.Error("資料庫連線字串設定不完整，無法執行轉移任務");
                     return 2; // 配置錯誤
