@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SMT鋼板逾期排程規劃 v1</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <style>
+        :root {
+            --primary: #3b82f6;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --info: #06b6d4;
+            --gray-50: #f9fafb;
+            --gray-100: #f3f4f6;
+            --gray-700: #374151;
+            --gray-800: #1f2937;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'Microsoft JhengHei', sans-serif;
+            background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+            min-height: 100vh;
+            padding: 2rem;
+            line-height: 1.8;
+        }
+
+        .container {
+            max-width: 1300px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.98);
+            border-radius: 20px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
+            padding: 3rem;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 3rem;
+            padding-bottom: 2rem;
+            border-bottom: 4px solid var(--primary);
+        }
+
+        header h1 {
+            font-size: 2.8rem;
+            background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 1rem;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.6rem 1.8rem;
+            background: var(--warning);
+            color: white;
+            border-radius: 20px;
+            font-weight: 700;
+            font-size: 1rem;
+        }
+
+        .version-badge {
+            display: inline-block;
+            padding: 0.4rem 1rem;
+            background: var(--success);
+            color: white;
+            border-radius: 15px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            margin-left: 0.5rem;
+        }
+
+        .meta-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+            padding: 2rem;
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            border-radius: 15px;
+            border: 2px solid var(--warning);
+        }
+
+        .meta-item {
+            font-size: 1rem;
+        }
+
+        .meta-item strong {
+            color: var(--gray-700);
+            display: block;
+            margin-bottom: 0.3rem;
+        }
+
+        .meta-item span {
+            color: var(--primary);
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        section {
+            margin-bottom: 3.5rem;
+        }
+
+        section h2 {
+            font-size: 2rem;
+            color: var(--gray-800);
+            margin-bottom: 1.5rem;
+            padding-left: 1.2rem;
+            border-left: 6px solid var(--primary);
+        }
+
+        section h3 {
+            font-size: 1.5rem;
+            color: var(--gray-700);
+            margin: 2.5rem 0 1.2rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid var(--gray-100);
+        }
+
+        section h4 {
+            font-size: 1.2rem;
+            color: var(--gray-700);
+            margin: 1.5rem 0 0.8rem;
+        }
+
+        .card {
+            background: white;
+            border: 2px solid var(--gray-100);
+            border-radius: 15px;
+            padding: 2.5rem;
+            margin: 1.5rem 0;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.5rem 0;
+        }
+
+        th,
+        td {
+            padding: 1.2rem;
+            text-align: left;
+            border-bottom: 1px solid var(--gray-100);
+        }
+
+        th {
+            background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+            font-weight: 700;
+            color: var(--gray-800);
+        }
+
+        tr:hover td {
+            background: #fef3c7;
+        }
+
+        code {
+            background: #f1f5f9;
+            padding: 0.3rem 0.7rem;
+            border-radius: 6px;
+            font-family: 'Consolas', 'Courier New', monospace;
+            color: #dc2626;
+            font-size: 0.9rem;
+            border: 1px solid #e2e8f0;
+        }
+
+        pre {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 2rem;
+            border-radius: 12px;
+            overflow-x: auto;
+            margin: 1.5rem 0;
+            font-size: 0.9rem;
+            line-height: 1.6;
+            border: 2px solid #334155;
+        }
+
+        pre code {
+            background: none;
+            color: inherit;
+            padding: 0;
+            border: none;
+        }
+
+        .alert {
+            padding: 1.5rem 2rem;
+            border-radius: 12px;
+            margin: 1.5rem 0;
+            border-left: 6px solid;
+            font-size: 1rem;
+        }
+
+        .alert-warning {
+            background: #fef3c7;
+            border-color: var(--warning);
+            color: #78350f;
+        }
+
+        .alert-info {
+            background: #dbeafe;
+            border-color: var(--info);
+            color: #1e3a8a;
+        }
+
+        .alert-danger {
+            background: #fee2e2;
+            border-color: var(--danger);
+            color: #7f1d1d;
+        }
+
+        .alert-success {
+            background: #d1fae5;
+            border-color: var(--success);
+            color: #065f46;
+        }
+
+        .highlight {
+            background: linear-gradient(120deg, #f472b6 0%, #ec4899 100%);
+            color: white;
+            padding: 0.3rem 0.8rem;
+            border-radius: 8px;
+            font-weight: 700;
+        }
+
+        .mermaid {
+            background: white;
+            padding: 2.5rem;
+            border-radius: 15px;
+            margin: 2rem 0;
+            border: 2px solid var(--gray-100);
+        }
+
+        ul,
+        ol {
+            margin-left: 2.5rem;
+            margin-top: 1rem;
+        }
+
+        li {
+            margin: 0.8rem 0;
+            line-height: 1.6;
+        }
+
+        .email-sample {
+            background: #f8fafc;
+            border: 3px solid #3b82f6;
+            border-radius: 15px;
+            padding: 2rem;
+            margin: 2rem 0;
+            font-family: 'Microsoft JhengHei', sans-serif;
+        }
+
+        .email-header {
+            background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+            color: white;
+            padding: 1.5rem;
+            border-radius: 10px;
+            margin-bottom: 1.5rem;
+        }
+
+        .email-body {
+            background: white;
+            padding: 2rem;
+            border-radius: 10px;
+            border: 1px solid #e5e7eb;
+        }
+
+        .config-table {
+            background: #fafafa;
+            border: 2px solid #e5e7eb;
+            padding: 1.5rem;
+            border-radius: 10px;
+        }
+
+        .revision-box {
+            background: #fef3c7;
+            border: 2px solid #f59e0b;
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+        }
+
+        .revision-box h4 {
+            color: #b45309;
+            margin-bottom: 1rem;
+        }
+
+        .revision-item {
+            display: flex;
+            gap: 1rem;
+            margin: 0.5rem 0;
+        }
+
+        .revision-item .tag {
+            background: #fbbf24;
+            color: #78350f;
+            padding: 0.2rem 0.6rem;
+            border-radius: 5px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 4rem;
+            padding-top: 2.5rem;
+            border-top: 3px solid var(--gray-100);
+            color: var(--gray-700);
+            font-size: 1rem;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1>📅 SMT鋼板逾期排程規劃</h1>
+            <p style="color: #6b7280; font-size: 1.2rem; margin-top: 0.5rem;">鋼板逾期通知排程任務 - Implementation Plan</p>
+            <span class="badge">📋 規劃階段</span>
+            <span class="version-badge">v1</span>
+        </header>
+
+        <!-- 規劃記錄 -->
+        <div class="revision-box">
+            <h4>📝 v1 規劃記錄 (2026-01-15)</h4>
+            <div class="revision-item"><span class="tag">新增</span> 加入 Log 機制說明</div>
+            <div class="revision-item"><span class="tag">新增</span> Email 群組參考 MAIL_GROUP (GROUP_NO=STEEL_ALARM)</div>
+            <div class="revision-item"><span class="tag">新增</span> 在線逾時天數為 7 天</div>
+            <div class="revision-item"><span class="tag">新增</span> USAGE_FREQUENCY_ALERT 變更記錄機制</div>
+            <div class="revision-item"><span class="tag">新增</span> 查詢邏輯：只取有效鋼板(STATUS='1')、排除有下線日期的鋼板</div>
+        </div>
+
+        <div class="meta-grid">
+            <div class="meta-item">
+                <strong>📅 規劃日期</strong>
+                <span>2026-01-15</span>
+            </div>
+            <div class="meta-item">
+                <strong>📦 排程名稱</strong>
+                <span>SMT_Stencil_Overdue</span>
+            </div>
+            <div class="meta-item">
+                <strong>🎯 排程目的</strong>
+                <span>鋼板逾期通知</span>
+            </div>
+            <div class="meta-item">
+                <strong>🗄️ 資料庫</strong>
+                <span>AMES 2.0 DB</span>
+            </div>
+            <div class="meta-item">
+                <strong>📧 通知方式</strong>
+                <span>Email (正體中文)</span>
+            </div>
+            <div class="meta-item">
+                <strong>⏰ 執行頻率</strong>
+                <span>每日 08:00</span>
+            </div>
+        </div>
+
+        <!-- 1. 需求概述 -->
+        <section>
+            <h2>🎯 需求概述</h2>
+            <div class="card">
+                <h3>1.1 背景說明</h3>
+                <p>SMT 製程中的鋼板（Stencil）具有固定使用壽命，需定期追蹤使用狀況。當鋼板接近使用上限或已超時，需通知相關人員準備更換，避免影響生產線運作。</p>
+
+                <h3>1.2 核心功能</h3>
+                <ul>
+                    <li>✅ 每日自動掃描所有有效鋼板（<code>STATUS='1'</code>）</li>
+                    <li>✅ <strong>排除已有下線日期的鋼板</strong>，僅針對未下線鋼板進行分析</li>
+                    <li>✅ 偵測三種逾期情境：使用率達 95%、已達使用上限、在線超過 <strong>7 天</strong>未下線</li>
+                    <li>✅ 產生 Email 通知，包含清晰的表格與告警層級</li>
+                    <li>✅ 更新告警旗標 <code>USAGE_FREQUENCY_ALERT</code>，<strong>並記錄變更 Log</strong></li>
+                    <li>✅ 支援測試模式，可指定測試收件人</li>
+                    <li>✅ <strong>完整 Log 機制</strong>，記錄執行過程與結果</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- 2. 技術架構 -->
+        <section>
+            <h2>🏗️ 技術架構</h2>
+            <div class="card">
+                <h3>2.1 系統流程圖</h3>
+                <pre class="mermaid">
+graph TB
+    A[Windows Task Scheduler] -->|每日 08:00| B[ES_Schedule.exe SMT_Stencil_Overdue]
+    B --> C["載入配置設定<br/>[Log] 配置載入完成"]
+    C --> D["連接 AMES 2.0 DB<br/>[Log] 連線成功"]
+    D --> E{查詢逾期鋼板<br/>取有效並排除已下線鋼板}
+    E -->|無逾期| F["[Log] 無逾期鋼板"]
+    E -->|有逾期| G["產生 Email 內容<br/>[Log] 發現 N 筆逾期"]
+    G --> H["查詢 Email群組<br/>取得收件人清單"]
+    H --> I["發送 Email<br/>[Log] 發送成功/失敗"]
+    I --> J["更新 USAGE_FREQUENCY_ALERT<br/>[Log] 更新旗標記錄"]
+    J --> K["[Log] 任務完成"]
+    F --> K
+    K --> L[結束 Exit Code=0]
+    
+    style B fill:#3b82f6,color:#fff
+    style G fill:#f59e0b,color:#fff
+    style J fill:#10b981,color:#fff
+    style L fill:#10b981,color:#fff
+</pre>
+
+                <h3>2.2 專案結構</h3>
+                <pre><code>ES_Schedule/
+├── Models/
+│   ├── StencilOverdueRecord.cs    # 逾期鋼板資料模型
+│   └── MailRecipient.cs           # Email 收件人模型
+├── Services/
+│   └── StencilOverdueService.cs   # 核心業務邏輯
+├── Jobs/
+│   └── StencilOverdueJob.cs       # 排程任務類別
+├── Common/
+│   └── Logger.cs                  # Log 服務
+├── Config/
+│   └── AppConfigService.cs        # 配置服務
+└── App.config                     # 配置檔 (新增設定)</code></pre>
+
+                <h3>2.3 Log 記錄內容範例</h3>
+                <pre><code>[2026-01-16 08:00:01] [INFO] 開始執行排程任務: SMT_Stencil_Overdue
+[2026-01-16 08:00:01] [INFO] 配置載入完成 - 在線逾時天數: 7, 使用率閾值: 0.95
+[2026-01-16 08:00:02] [INFO] JHDB 連線成功
+[2026-01-16 08:00:03] [INFO] 查詢逾期鋼板 (排除已下線)...
+[2026-01-16 08:00:04] [INFO] 發現 5 筆逾期鋼板 (警告: 2, 嚴重: 2, 緊急: 1)
+[2026-01-16 08:00:05] [INFO] 取得 STEEL_ALARM 群組收件人: 3 人
+[2026-01-16 08:00:06] [INFO] 發送 Email 成功 - 收件人: user1@eversun.com.tw, user2@eversun.com.tw
+[2026-01-16 08:00:07] [INFO] 更新旗標 - SP-2024-004: N → Y
+[2026-01-16 08:00:07] [INFO] 更新旗標 - SP-2024-005: N → Y
+[2026-01-16 08:00:08] [INFO] 排程任務完成: SMT_Stencil_Overdue (耗時: 7 秒)</code></pre>
+            </div>
+        </section>
+
+        <!-- 4. 資料查詢邏輯 -->
+        <section>
+            <h2>🔍 資料查詢邏輯</h2>
+            <div class="card">
+                <h3>4.1 逾期判斷標準</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width: 25%;">逾期類型</th>
+                            <th style="width: 40%;">說明</th>
+                            <th style="width: 15%;">告警層級</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr style="background: #fef3c7;">
+                            <td><strong>即將達限</strong></td>
+                            <td>使用率達 95%，尚未通知</td>
+                            <td><span class="highlight">警告</span></td>
+                        </tr>
+                        <tr style="background: #fed7aa;">
+                            <td><strong>已達上限</strong></td>
+                            <td>已達可使用次數，應立即更換</td>
+                            <td><span class="highlight">嚴重</span></td>
+                        </tr>
+                        <tr style="background: #fecaca;">
+                            <td><strong>在線逾時</strong></td>
+                            <td>鋼板上線超過 <strong>7 天</strong>未下線</td>
+                            <td><span class="highlight">緊急</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- 5. 旗標變更記錄 -->
+        <section>
+            <h2>📝 旗標變更記錄機制</h2>
+            <div class="card">
+                <h3>5.1 變更記錄方式</h3>
+                <p>當更新 <code>USAGE_FREQUENCY_ALERT</code> 旗標時，需同時記錄變更：</p>
+
+                <div class="alert alert-info">
+                    <strong>📋 記錄方式選項 (擇一)：</strong>
+                    <ol>
+                        <li><strong>Log 檔案記錄</strong> - 使用 Logger 記錄至檔案（建議採用）</li>
+                        <li><strong>資料表記錄</strong> - 寫入 AUDIT_LOG 或專用記錄表</li>
+                    </ol>
+                </div>
+
+                <h3>5.2 Log 記錄格式</h3>
+                <pre><code>[2026-01-16 08:00:07] [INFO] 更新旗標 USAGE_FREQUENCY_ALERT
+    鋼板編號: SP-2024-004
+    工程編號: ENG-D-22222
+    原始值: N
+    新值: Y
+    使用率: 96.7%
+    觸發原因: 使用率達95%
+    更新時間: 2026/01/16 08:00:07</code></pre>
+            </div>
+        </section>
+
+        <!-- 6. Email 格式設計 -->
+        <section>
+            <h2>📧 Email 格式設計</h2>
+            <div class="card">
+                <h3>6.1 Email 樣板</h3>
+                <div class="email-sample">
+                    <div class="email-header">
+                        <h3 style="margin: 0; font-size: 1.5rem;">🚨 [AMES系統通知] SMT 鋼板逾期告警</h3>
+                        <p style="margin: 0.5rem 0 0 0; font-size: 0.95rem; opacity: 0.95;">Stencil Overdue Alert
+                            Notification</p>
+                    </div>
+                    <div class="email-body">
+                        <p style="margin-bottom: 1.5rem; font-size:1.1rem; color: #374151;"><strong>Hi~All,</strong></p>
+                        <p style="margin-bottom: 1.5rem; line-height: 1.8;">系統偵測到以下鋼板已達逾期條件，請儘速安排處理以避免影響生產線運作。</p>
+
+                        <div
+                            style="background: #fef3c7; padding: 1rem; border-radius: 8px; margin: 1.5rem 0; border-left: 4px solid #f59e0b;">
+                            <p style="margin: 0;"><strong>📊 統計資訊</strong></p>
+                            <p style="margin: 0.5rem 0 0 0;">• 檢查日期：<strong>2026/01/01</strong></p>
+                            <p style="margin: 0.5rem 0 0 0;">• 逾期數量：<strong>5 筆</strong>（警告: 2, 嚴重: 2, 緊急: 1）</p>
+                        </div>
+
+                        <h4 style="margin: 2rem 0 1rem 0; color: #1f2937; font-size: 1.2rem;">📋 逾期鋼板清單</h4>
+                        <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
+                            <thead>
+                                <tr style="background: #eff6ff;">
+                                    <th style="padding: 0.8rem; border: 1px solid #cbd5e1; text-align: left;">層級</th>
+                                    <th style="padding: 0.8rem; border: 1px solid #cbd5e1; text-align: left;">鋼板編號</th>
+                                    <th style="padding: 0.8rem; border: 1px solid #cbd5e1; text-align: left;">工程編號</th>
+                                    <th style="padding: 0.8rem; border: 1px solid #cbd5e1; text-align: center;">使用率</th>
+                                    <th style="padding: 0.8rem; border: 1px solid #cbd5e1; text-align: center;">已用/可用
+                                    </th>
+                                    <th style="padding: 0.8rem; border: 1px solid #cbd5e1; text-align: left;">逾期原因</th>
+                                    <th style="padding: 0.8rem; border: 1px solid #cbd5e1; text-align: left;">上線日期</th>
+                                    <th style="padding: 0.8rem; border: 1px solid #cbd5e1; text-align: left;">儲位</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr style="background: #fee2e2;">
+                                    <td style="padding: 0.8rem; border: 1px solid #cbd5e1;"><strong
+                                            style="color: #dc2626;">🔴 緊急</strong></td>
+                                    <td style="padding: 0.8rem; border: 1px solid #cbd5e1;">SP-2024-001</td>
+                                    <td style="padding: 0.8rem; border: 1px solid #cbd5e1;">ENG-A-12345</td>
+                                    <td style="padding: 0.8rem; border: 1px solid #cbd5e1; text-align: center;">87.5%
+                                    </td>
+                                    <td style="padding: 0.8rem; border: 1px solid #cbd5e1; text-align: center;">35 / 40
+                                    </td>
+                                    <td style="padding: 0.8rem; border: 1px solid #cbd5e1;">在線超過7天 (10天)</td>
+                                    <td style="padding: 0.8rem; border: 1px solid #cbd5e1;">2026/01/06</td>
+                                    <td style="padding: 0.8rem; border: 1px solid #cbd5e1;">A-01-03</td>
+                                </tr>
+                                <tr style="background: #fed7aa;">
+                                    <td style="padding: 0.8rem; border: 1px solid #cbd5e1;"><strong
+                                            style="color: #ea580c;">🟠 嚴重</strong></td>
+                                    <td style="padding: 0.8rem; border: 1px solid #cbd5e1;">SP-2024-002</td>
+                                    <td style="padding: 0.8rem; border: 1px solid #cbd5e1;">ENG-B-67890</td>
+                                    <td style="padding: 0.8rem; border: 1px solid #cbd5e1; text-align: center;">100.0%
+                                    </td>
+                                    <td style="padding: 0.8rem; border: 1px solid #cbd5e1; text-align: center;">50 / 50
+                                    </td>
+                                    <td style="padding: 0.8rem; border: 1px solid #cbd5e1;">已達使用上限</td>
+                                    <td style="padding: 0.8rem; border: 1px solid #cbd5e1;">2026/01/10</td>
+                                    <td style="padding: 0.8rem; border: 1px solid #cbd5e1;">B-02-01</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 0.8rem; border: 1px solid #cbd5e1;"><strong
+                                            style="color: #ea580c;">🟠 嚴重</strong></td>
+                                    <td style="padding: 0.8rem; border: 1px solid #cbd5e1;">SP-2024-003</td>
+                                    <td style="padding: 0.8rem; border: 1px solid #cbd5e1;">ENG-C-11111</td>
+                                    <td style="padding: 0.8rem; border: 1px solid #cbd5e1; text-align: center;">103.3%
+                                    </td>
+                                    <td style="padding: 0.8rem; border: 1px solid #cbd5e1; text-align: center;">31 / 30
+                                    </td>
+                                    <td style="padding: 0.8rem; border: 1px solid #cbd5e1;">已達使用上限</td>
+                                    <td style="padding: 0.8rem; border: 1px solid #cbd5e1;">2026/01/12</td>
+                                    <td style="padding: 0.8rem; border: 1px solid #cbd5e1;">A-03-02</td>
+                                </tr>
+                                <tr style="background: #fef3c7;">
+                                    <td style="padding: 0.8rem; border: 1px solid #cbd5e1;"><strong
+                                            style="color: #ca8a04;">🟡 警告</strong></td>
+                                    <td style="padding: 0.8rem; border: 1px solid #cbd5e1;">SP-2024-004</td>
+                                    <td style="padding: 0.8rem; border: 1px solid #cbd5e1;">ENG-D-22222</td>
+                                    <td style="padding: 0.8rem; border: 1px solid #cbd5e1; text-align: center;">96.7%
+                                    </td>
+                                    <td style="padding: 0.8rem; border: 1px solid #cbd5e1; text-align: center;">29 / 30
+                                    </td>
+                                    <td style="padding: 0.8rem; border: 1px solid #cbd5e1;">使用率達95%</td>
+                                    <td style="padding: 0.8rem; border: 1px solid #cbd5e1;">2026/01/14</td>
+                                    <td style="padding: 0.8rem; border: 1px solid #cbd5e1;">C-01-05</td>
+                                </tr>
+                                <tr style="background: #fef3c7;">
+                                    <td style="padding: 0.8rem; border: 1px solid #cbd5e1;"><strong
+                                            style="color: #ca8a04;">🟡 警告</strong></td>
+                                    <td style="padding: 0.8rem; border: 1px solid #cbd5e1;">SP-2024-005</td>
+                                    <td style="padding: 0.8rem; border: 1px solid #cbd5e1;">ENG-E-33333</td>
+                                    <td style="padding: 0.8rem; border: 1px solid #cbd5e1; text-align: center;">95.0%
+                                    </td>
+                                    <td style="padding: 0.8rem; border: 1px solid #cbd5e1; text-align: center;">38 / 40
+                                    </td>
+                                    <td style="padding: 0.8rem; border: 1px solid #cbd5e1;">使用率達95%</td>
+                                    <td style="padding: 0.8rem; border: 1px solid #cbd5e1;">2026/01/15</td>
+                                    <td style="padding: 0.8rem; border: 1px solid #cbd5e1;">D-02-01</td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <div
+                            style="background: #dbeafe; padding: 1rem; border-radius: 8px; margin: 2rem 0; border-left: 4px solid #3b82f6;">
+                            <p style="margin: 0;"><strong>💡 處理建議</strong></p>
+                            <p style="margin: 0.5rem 0 0 0;">• <strong>緊急/嚴重</strong>：請立即安排鋼板更換作業</p>
+                            <p style="margin: 0.5rem 0 0 0;">• <strong>警告</strong>：請提前準備新鋼板，避免影響生產排程</p>
+                        </div>
+
+                        <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 2rem 0;">
+
+                        <p style="font-size: 0.9rem; color: #6b7280;">
+                            此為系統自動發送的通知郵件，如有疑問請聯繫 IT 部門。<br />
+                            查詢路徑：AMES系統 → PCB管理 → PCB016 鋼板量測記錄
+                        </p>
+                        <p style="font-size: 0.85rem; color: #9ca3af; margin-top: 1rem;">
+                            <em>Powered by EverSun | Daloz(ㄚ智)</em>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 7. 測試方案 -->
+        <section>
+            <h2>🧪 測試劇本</h2>
+            <div class="card">
+                <h3>8.1 測試案例設計</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width: 15%;">案例編號</th>
+                            <th style="width: 35%;">測試情境</th>
+                            <th style="width: 30%;">準備數據</th>
+                            <th style="width: 20%;">預期結果</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>TC-001</strong></td>
+                            <td>無逾期鋼板</td>
+                            <td>所有鋼板使用率 &lt; 95%<br />無鋼板在線超過7天</td>
+                            <td>不發送 Email<br />Log: 無逾期</td>
+                        </tr>
+                        <tr>
+                            <td><strong>TC-002</strong></td>
+                            <td>使用率達 95%（警告）</td>
+                            <td>鋼板 A: 已用 38 / 可用 40<br />(使用率 95%)<br />USAGE_FREQUENCY_ALERT='N'</td>
+                            <td>發送 Email (含 1 筆)<br />更新旗標為 'Y'<br />Log 記錄旗標變更</td>
+                        </tr>
+                        <tr>
+                            <td><strong>TC-003</strong></td>
+                            <td>已達使用上限（嚴重）</td>
+                            <td>鋼板 B: 已用 50 / 可用 50</td>
+                            <td>發送 Email (含 1 筆)<br />告警層級「嚴重」</td>
+                        </tr>
+                        <tr style="background: #fef3c7;">
+                            <td><strong>TC-004</strong></td>
+                            <td>在線逾時（緊急）</td>
+                            <td>鋼板 C: ON_DATE = <strong>8</strong>天前<br />OFF_DATE = NULL</td>
+                            <td>發送 Email (含 1 筆)<br />告警層級「緊急」</td>
+                        </tr>
+                        <tr style="background: #fef3c7;">
+                            <td><strong>TC-005</strong></td>
+                            <td>已下線鋼板排除</td>
+                            <td>鋼板 D: 使用率100%<br /><strong>OFF_DATE 有值</strong></td>
+                            <td><strong>不列入告警清單</strong><br />（已下線排除）</td>
+                        </tr>
+                        <tr>
+                            <td><strong>TC-006</strong></td>
+                            <td>測試模式驗證</td>
+                            <td>TestMode=true<br />TestRecipient=daloz.e@eversun.com.tw</td>
+                            <td>Email 僅發送給測試人員</td>
+                        </tr>
+                        <tr>
+                            <td><strong>TC-007</strong></td>
+                            <td>旗標變更 Log 記錄</td>
+                            <td>使用率達95%的鋼板</td>
+                            <td>Log 需記錄：<br />鋼板編號/原值/新值</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- 9. 總結 -->
+        <section>
+            <h2>📌 規劃總結</h2>
+            <div class="card">
+                <div class="alert alert-info" style="font-size: 1.1rem;">
+                    <strong>✅ v1 規劃項目：</strong>
+                    <ol style="margin-top: 1rem; font-size: 1rem;">
+                        <li>✅ Log 機制說明與範例</li>
+                        <li>✅ Email 群組 MAIL_GROUP (GROUP_NO=STEEL_ALARM)</li>
+                        <li>✅ 在線逾時天數為 <strong>7 天</strong></li>
+                        <li>✅ 新增 USAGE_FREQUENCY_ALERT 變更記錄說明</li>
+                        <li>✅ 查詢邏輯：只取有效鋼板、排除已有下線日期的鋼板</li>
+                    </ol>
+                </div>
+
+                <p style="margin-top: 2rem; font-size: 1.1rem; text-align: center; color: #374151;">
+                    <strong>📋 規劃完成，等待核准後進入實作階段</strong>
+                </p>
+            </div>
+        </section>
+
+        <footer>
+            <p style="font-size: 1.1rem;"><strong>📘 SMT鋼板逾期排程規劃 v1</strong></p>
+            <p style="margin-top: 0.5rem;">規劃日期: 2026-01-15 &#183; 規劃者: Daloz(ㄚ智)</p>
+            <p style="margin-top: 0.5rem; font-size: 0.9rem; color: #9ca3af;">專案: ES_Schedule &#183; 模組: SMT 鋼板逾期通知</p>
+        </footer>
+    </div>
+
+    <script>
+        mermaid.initialize({ startOnLoad: true, theme: 'default' });
+    </script>
+</body>
+
+</html>

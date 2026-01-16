@@ -16,6 +16,7 @@ namespace ES_Schedule.Services
         {
             { "RepairRecordsTransfer", () => new RepairRecordsTransferJob() },
             { "ActualTimeCalc", () => new ActualTimeCalcJob() },
+            { "SMT_Stencil_Overdue", () => new StencilOverdueJob() },
             // 未來新增其他任務只需在此註冊
         };
 

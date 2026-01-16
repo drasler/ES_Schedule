@@ -73,15 +73,19 @@
     <!-- Services -->
     <Compile Include="Services\JobFactory.cs" />
     <Compile Include="Services\ActualTimeCalcService.cs" />
+    <Compile Include="Services\StencilOverdueService.cs" />
     
     <!-- Jobs -->
     <Compile Include="Jobs\RepairRecordsTransferJob.cs" />
     <Compile Include="Jobs\ActualTimeCalcJob.cs" />
+    <Compile Include="Jobs\StencilOverdueJob.cs" />
     
     <!-- Models -->
     <Compile Include="Models\ActualTime.cs" />
     <Compile Include="Models\ActualTimeDetail.cs" />
     <Compile Include="Models\TimesheetRecord.cs" />
+    <Compile Include="Models\StencilOverdueRecord.cs" />
+    <Compile Include="Models\MailRecipient.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

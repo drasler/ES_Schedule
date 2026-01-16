@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PCB016 鋼板管理邏輯分析報告</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --info: #06b6d4;
+            --gray-50: #f9fafb;
+            --gray-100: #f3f4f6;
+            --gray-700: #374151;
+            --gray-800: #1f2937;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'Microsoft JhengHei', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 2rem;
+            line-height: 1.8;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.98);
+            border-radius: 20px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.3);
+            padding: 3rem;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 3rem;
+            padding-bottom: 2rem;
+            border-bottom: 3px solid var(--primary);
+        }
+
+        header h1 {
+            font-size: 2.5rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 1rem;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.5rem 1.5rem;
+            background: var(--info);
+            color: white;
+            border-radius: 20px;
+            font-weight: 600;
+        }
+
+        .meta-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+            margin: 2rem 0;
+            padding: 1.5rem;
+            background: var(--gray-50);
+            border-radius: 12px;
+        }
+
+        .meta-item {
+            font-size: 0.95rem;
+        }
+
+        .meta-item strong {
+            color: var(--gray-700);
+            display: inline-block;
+            min-width: 90px;
+        }
+
+        .meta-item span {
+            color: var(--primary);
+        }
+
+        section {
+            margin-bottom: 3rem;
+        }
+
+        section h2 {
+            font-size: 1.8rem;
+            color: var(--gray-800);
+            margin-bottom: 1.5rem;
+            padding-left: 1rem;
+            border-left: 5px solid var(--primary);
+        }
+
+        section h3 {
+            font-size: 1.3rem;
+            color: var(--gray-700);
+            margin: 2rem 0 1rem;
+        }
+
+        .card {
+            background: white;
+            border: 1px solid var(--gray-100);
+            border-radius: 12px;
+            padding: 2rem;
+            margin: 1.5rem 0;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.5rem 0;
+        }
+
+        th,
+        td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--gray-100);
+        }
+
+        th {
+            background: var(--gray-50);
+            font-weight: 700;
+            color: var(--gray-700);
+        }
+
+        tr:hover td {
+            background: #fef3c7;
+        }
+
+        code {
+            background: var(--gray-100);
+            padding: 0.2rem 0.6rem;
+            border-radius: 4px;
+            font-family: 'Consolas', monospace;
+            color: var(--primary);
+            font-size: 0.9rem;
+        }
+
+        pre {
+            background: var(--gray-800);
+            color: #e5e7eb;
+            padding: 1.5rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 1rem 0;
+            font-size: 0.9rem;
+        }
+
+        pre code {
+            background: none;
+            color: inherit;
+            padding: 0;
+        }
+
+        .alert {
+            padding: 1.2rem 1.5rem;
+            border-radius: 10px;
+            margin: 1.5rem 0;
+            border-left: 5px solid;
+        }
+
+        .alert-warning {
+            background: #fef3c7;
+            border-color: var(--warning);
+            color: #78350f;
+        }
+
+        .alert-info {
+            background: #dbeafe;
+            border-color: var(--info);
+            color: #1e3a8a;
+        }
+
+        .alert-danger {
+            background: #fee2e2;
+            border-color: var(--danger);
+            color: #7f1d1d;
+        }
+
+        .highlight {
+            background: linear-gradient(120deg, #fbbf24 0%, #f59e0b 100%);
+            color: white;
+            padding: 0.3rem 0.6rem;
+            border-radius: 6px;
+            font-weight: 600;
+        }
+
+        .mermaid {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            margin: 2rem 0;
+        }
+
+        ul,
+        ol {
+            margin-left: 2rem;
+            margin-top: 1rem;
+        }
+
+        li {
+            margin: 0.5rem 0;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 3rem;
+            padding-top: 2rem;
+            border-top: 2px solid var(--gray-100);
+            color: var(--gray-700);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1>📋 PCB016 鋼板管理邏輯分析報告</h1>
+            <p style="color: #6b7280; font-size: 1.1rem; margin-top: 0.5rem;">SMT 鋼板生命週期管理與逾期告警機制深度解析</p>
+            <span class="badge">✅ 分析完成</span>
+        </header>
+
+        <div class="meta-grid">
+            <div class="meta-item"><strong>產出日期：</strong><span>2026-01-16</span></div>
+            <div class="meta-item"><strong>分析模組：</strong><span>PCB016 鋼板量測紀錄</span></div>
+            <div class="meta-item"><strong>資料來源：</strong><span>@AMESCoreStudio</span></div>
+            <div class="meta-item"><strong>資料庫：</strong><span>JHDB (Oracle)</span></div>
+        </div>
+
+        <!-- 1. 業務背景 -->
+        <section>
+            <h2>🎯 業務背景與目的</h2>
+            <div class="card">
+                <p><strong>PCB016</strong> 是 AMES 系統中用於管理 <span class="highlight">SMT 鋼板</span> 的核心模組。鋼板（Stencil）是 SMT
+                    製程中用於錫膏印刷的關鍵治具，具有以下特性：</p>
+                <ul>
+                    <li>每片鋼板有<strong>固定的使用壽命</strong>（可使用次數），用完後需更換</li>
+                    <li>需追蹤鋼板的<strong>上線/下線張力</strong>，確保品質穩定性</li>
+                    <li>當鋼板使用次數達 <strong>95%</strong> 時，系統需發出告警通知</li>
+                    <li>如果張力量測值 <strong>&lt; 35</strong>，鋼板將標記為失效並觸發 Email 通知</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- 2. 資料表結構 -->
+        <section>
+            <h2>🗄️ 資料表結構</h2>
+
+            <h3>2.1 主表：STEEL_PLATE_INFO (鋼板基本資料)</h3>
+            <div class="card">
+                <p><strong>Schema:</strong> <code>JHAMES.STEEL_PLATE_INFO</code></p>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>欄位名稱</th>
+                            <th>資料型別</th>
+                            <th>說明</th>
+                            <th>關鍵備註</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>STEEL_PLATE_ID</code></td>
+                            <td>INT (PK)</td>
+                            <td>鋼板ID</td>
+                            <td>主鍵</td>
+                        </tr>
+                        <tr>
+                            <td><code>STEEL_PLATE_NO</code></td>
+                            <td>VARCHAR(40)</td>
+                            <td>鋼板編號</td>
+                            <td>唯一，必填</td>
+                        </tr>
+                        <tr>
+                            <td><code>ITEMS</code></td>
+                            <td>VARCHAR</td>
+                            <td>工程編號（料號）</td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><code>ARRIVAL_DATE</code></td>
+                            <td>DATE</td>
+                            <td>到廠日期</td>
+                            <td>必填</td>
+                        </tr>
+                        <tr>
+                            <td><code>STORAGE_LOCATION</code></td>
+                            <td>VARCHAR</td>
+                            <td>儲存位置（儲位）</td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><code>USED_TIMES</code></td>
+                            <td>INT</td>
+                            <td>可使用次數</td>
+                            <td>預設=1</td>
+                        </tr>
+                        <tr>
+                            <td><code>BE_USE_TIMES</code></td>
+                            <td>INT</td>
+                            <td>已使用次數</td>
+                            <td>預設=0</td>
+                        </tr>
+                        <tr>
+                            <td><code>TOTAL_TIMES</code></td>
+                            <td>INT</td>
+                            <td>累計使用次數</td>
+                            <td>預設=0</td>
+                        </tr>
+                        <tr style="background: #fef3c7;">
+                            <td><code>USAGE_FREQUENCY_ALERT</code></td>
+                            <td>CHAR(1)</td>
+                            <td>使用頻率告警旗標</td>
+                            <td><strong>Y/N（達95%時設為Y）</strong></td>
+                        </tr>
+                        <tr>
+                            <td><code>BOARDS</code></td>
+                            <td>INT</td>
+                            <td>連板數</td>
+                            <td>預設=1</td>
+                        </tr>
+                        <tr>
+                            <td><code>STATUS</code></td>
+                            <td>CHAR(2)</td>
+                            <td>狀態</td>
+                            <td>0=失效, 1=有效</td>
+                        </tr>
+                        <tr>
+                            <td><code>REMARK</code></td>
+                            <td>VARCHAR(1024)</td>
+                            <td>備註</td>
+                            <td>-</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3>2.2 量測表：STEEL_PLATE_MEASURE (鋼板量測記錄)</h3>
+            <div class="card">
+                <p><strong>Schema:</strong> <code>JHAMES.STEEL_PLATE_MEASURE</code></p>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>欄位名稱</th>
+                            <th>說明</th>
+                            <th>備註</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>SP_MEASURE_ID</code></td>
+                            <td>量測ID (PK)</td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><code>STEEL_PLATE_ID</code></td>
+                            <td>鋼板ID (FK)</td>
+                            <td>關聯至 STEEL_PLATE_INFO</td>
+                        </tr>
+                        <tr>
+                            <td><code>WIP_NO</code></td>
+                            <td>工單號碼</td>
+                            <td>記錄該次使用的工單</td>
+                        </tr>
+                        <tr style="background: #dbeafe;">
+                            <td><code>ON_TENSION_1~5</code></td>
+                            <td>上線張力（5點）</td>
+                            <td><strong>基準值 ≥ 35</strong></td>
+                        </tr>
+                        <tr>
+                            <td><code>ON_USER_ID</code></td>
+                            <td>上線操作人員</td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><code>ON_DATE</code></td>
+                            <td>上線時間</td>
+                            <td>-</td>
+                        </tr>
+                        <tr style="background: #dbeafe;">
+                            <td><code>OFF_TENSION_1~5</code></td>
+                            <td>下線張力（5點）</td>
+                            <td><strong>基準值 ≥ 35</strong></td>
+                        </tr>
+                        <tr>
+                            <td><code>OFF_USER_ID</code></td>
+                            <td>下線操作人員</td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><code>OFF_DATE</code></td>
+                            <td>下線時間</td>
+                            <td>-</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3>2.3 異常表：STEEL_PLATE_MEASURE_NG (張力異常記錄)</h3>
+            <div class="card">
+                <p>當鋼板上/下線張力 <strong>&lt; 35</strong> 時，記錄至此表並將 <code>STEEL_PLATE_INFO.STATUS</code> 改為
+                    <code>'0'</code>（失效）。</p>
+            </div>
+        </section>
+
+        <!-- 3. 核心邏輯流程 -->
+        <section>
+            <h2>⚙️ 核心業務邏輯</h2>
+
+            <div class="card">
+                <h3>3.1 鋼板上線流程</h3>
+                <pre class="mermaid">
+graph LR
+    A[鋼板未上線] --> B{量測張力}
+    B -->|全部≥35| C[記錄上線張力]
+    B -->|任一<35| D[標記失效]
+    C --> E[鋼板在線使用]
+    D --> F[寫入NG表]
+    F --> G[發送Email告警]
+</pre>
+            </div>
+
+            <div class="card">
+                <h3>3.2 鋼板下線流程</h3>
+                <pre class="mermaid">
+graph LR
+    A[鋼板使用完畢] --> B{量測張力}
+    B -->|全部≥35| C[更新下線張力]
+    B -->|任一<35| D[標記失效]
+    C --> E[BE_USE_TIMES +1]
+    E --> F{已用次數/可用次數}
+    F -->|≥95%| G[USAGE_FREQUENCY_ALERT=Y]
+    F -->|<95%| H[繼續使用]
+    D --> I[發送Email告警]
+</pre>
+            </div>
+
+            <div class="alert alert-warning">
+                <strong>⚠️ 關鍵告警觸發條件：</strong>
+                <ol>
+                    <li><strong>張力異常</strong>：上線或下線時，任一量測點 &lt; 35 → 立即發送告警Email</li>
+                    <li><strong>使用率告警</strong>：<code>BE_USE_TIMES / USED_TIMES ≥ 0.95</code> → 需提前通知準備新鋼板</li>
+                </ol>
+            </div>
+        </section>
+
+        <!-- 4. Email 告警範例 -->
+        <section>
+            <h2>📧 現有 Email 告警機制（張力異常）</h2>
+            <div class="card">
+                <p><strong>觸發位置：</strong> <code>PCBController.PCB013ASave</code> (Line 206-266)</p>
+                <p><strong>Mail Group:</strong> <code>STEEL_ALARM</code></p>
+
+                <h4>Email 範例內容：</h4>
+                <pre>
+主旨: [AMES系統通知] 鋼板量測值告警通知
+
+內容:
+鋼板編號：SP12345
+量測日期[2026/01/16]
+量測時間[09:30:00]
+量測人員[張小明]
+上線量測第一點量測值(32)、第三點量測值(28)小於告警值
+</pre>
+
+                <div class="alert alert-info">
+                    <strong>💡 程式邏輯：</strong>
+                    <ul>
+                        <li>逐點檢查 5 個張力值是否 &lt; 35</li>
+                        <li>動態組合異常點訊息（例：「第一點(32)、第三點(28)小於告警值」）</li>
+                        <li>透過 <code>_bllApi.PostToMail()</code> 發送至 <code>STEEL_ALARM</code> 群組</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- 5. 逾期判斷邏輯 -->
+        <section>
+            <h2>🔍 鋼板逾期判斷標準（新排程需求）</h2>
+
+            <div class="card">
+                <h3>5.1 邏輯定義</h3>
+                <p>根據現有系統，<strong>鋼板逾期</strong> 應符合以下條件之一：</p>
+
+                <div class="alert alert-danger">
+                    <strong>🚨 逾期條件（OR 關係）：</strong>
+                    <ol>
+                        <li><strong>使用率 ≥ 95%：</strong> <code>BE_USE_TIMES / USED_TIMES >= 0.95</code> 且
+                            <code>USAGE_FREQUENCY_ALERT = 'N'</code>（尚未通知）</li>
+                        <li><strong>已達使用上限：</strong> <code>BE_USE_TIMES >= USED_TIMES</code> 且
+                            <code>STATUS = '1'</code>（尚未失效但已超限）</li>
+                        <li><strong>鋼板仍在線上：</strong> 有 <code>ON_DATE</code> 但 <code>OFF_DATE IS NULL</code>，且超過 N
+                            天未下線（可配置）</li>
+                    </ol>
+                </div>
+
+                <h3>5.2 查詢 SQL 範例</h3>
+                <pre><code>SELECT 
+    I.STEEL_PLATE_ID,
+    I.STEEL_PLATE_NO,
+    I.ITEMS,
+    I.STORAGE_LOCATION,
+    I.USED_TIMES,
+    I.BE_USE_TIMES,
+    ROUND(I.BE_USE_TIMES / I.USED_TIMES * 100, 2) AS USAGE_RATE,
+    I.USAGE_FREQUENCY_ALERT,
+    M.WIP_NO,
+    M.ON_DATE,
+    M.OFF_DATE,
+    TRUNC(SYSDATE - M.ON_DATE) AS DAYS_ONLINE
+FROM JHAMES.STEEL_PLATE_INFO I
+LEFT JOIN JHAMES.STEEL_PLATE_MEASURE M ON I.STEEL_PLATE_ID = M.STEEL_PLATE_ID
+WHERE I.STATUS = '1'  -- 有效鋼板
+AND (
+    -- 條件1: 使用率達95%且未通知
+    (I.BE_USE_TIMES / I.USED_TIMES >= 0.95 AND I.USAGE_FREQUENCY_ALERT = 'N')
+    -- 條件2: 已達使用上限
+    OR (I.BE_USE_TIMES >= I.USED_TIMES)
+    -- 條件3: 在線超過3天未下線
+    OR (M.ON_DATE IS NOT NULL AND M.OFF_DATE IS NULL AND SYSDATE - M.ON_DATE > 3)
+)
+ORDER BY USAGE_RATE DESC, DAYS_ONLINE DESC</code></pre>
+            </div>
+        </section>
+
+        <!-- 6. 總結與建議 -->
+        <section>
+            <h2>📌 分析總結</h2>
+            <div class="card">
+                <h3>6.1 關鍵發現</h3>
+                <ul>
+                    <li>✅ 系統已有 <code>USAGE_FREQUENCY_ALERT</code> 欄位可用於追蹤是否已發送告警</li>
+                    <li>✅ 現有 Email 機制使用 <code>_bllApi.PostToMail()</code> 整合良好</li>
+                    <li>⚠️ <strong>缺少定期檢查機制</strong>：目前只有在手動量測時才檢查張力，沒有排程自動偵測逾期</li>
+                    <li>⚠️ 需補充「在線未下線」的逾期告警邏輯</li>
+                </ul>
+
+                <h3>6.2 新排程建議</h3>
+                <p><strong>排程名稱：</strong> <code>SMT_Stencil_Overdue</code> (鋼板逾期通知)</p>
+                <p><strong>執行頻率：</strong> 每日 08:00 執行</p>
+                <p><strong>核心功能：</strong></p>
+                <ul>
+                    <li>掃描所有有效鋼板（<code>STATUS='1'</code>）</li>
+                    <li>檢查使用率 ≥ 95% 且未發告警的鋼板</li>
+                    <li>檢查已達使用上限的鋼板</li>
+                    <li>檢查在線超過設定天數未下線的鋼板</li>
+                    <li>產生正體中文 Email 通知發送給相關人員</li>
+                    <li>更新 <code>USAGE_FREQUENCY_ALERT</code> 避免重複通知</li>
+                </ul>
+            </div>
+        </section>
+
+        <footer>
+            <p>📘 PCB016 鋼板管理邏輯分析報告 | 產出日期: 2026-01-16</p>
+            <p style="margin-top: 0.5rem; font-size: 0.9rem;">分析來源: @AMESCoreStudio &#183; 分析者: AI Assistant</p>
+        </footer>
+    </div>
+
+    <script>
+        mermaid.initialize({ startOnLoad: true, theme: 'default' });
+    </script>
+</body>
+
+</html>
